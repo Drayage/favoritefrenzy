@@ -1,7 +1,7 @@
 // sw.js — 서비스워커. 앱 셸을 캐시해 오프라인 플레이를 지원한다.
 // 멀티플레이용 Firebase SDK는 CDN(교차 출처)에서 받으므로 캐시하지 않으며 온라인에서만 동작한다.
 
-const CACHE = 'favorite-frenzy-v5';
+const CACHE = 'favorite-frenzy-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -43,19 +43,20 @@ self.addEventListener('fetch', (e) => {
   if (url.origin !== location.origin) return;
   if (e.request.method !== 'GET') return;
 
+  // 네트워크 우선: 온라인이면 항상 최신 파일을 받아 캐시를 갱신하고,
+  // 네트워크 실패(오프라인)시에만 캐시로 폴백한다. (옛 CSS/JS 고착 방지)
   e.respondWith(
-    caches.match(e.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(e.request)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
-          return res;
-        })
-        .catch(() => {
-          // 네비게이션 실패 시 앱 셸 반환
+    fetch(e.request)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+        return res;
+      })
+      .catch(() =>
+        caches.match(e.request).then((cached) => {
+          if (cached) return cached;
           if (e.request.mode === 'navigate') return caches.match('./index.html');
-        });
-    })
+        })
+      )
   );
 });
