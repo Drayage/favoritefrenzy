@@ -4,7 +4,7 @@
 
 import { makeRng, shuffle } from './rng.js';
 import {
-  PETS, PET_BY_KEY, PET_KEYS_DESC, buildDeck, getCard,
+  PETS, PET_BY_KEY, PET_KEYS_DESC, buildDeck, setCurrentDeck, getCard,
   HAND_SIZE, EXPLODE_AT,
 } from './cards.js';
 
@@ -42,7 +42,9 @@ export function previewPlayPets(state, pet, cardIds) {
 // opts: { petsPerType, specialCount } — buildDeck 파라미터 (미저장, 게임별 설정)
 export function createGame(configs, seed, opts = {}) {
   const rng = makeRng(seed);
-  const deck = shuffle(buildDeck(opts).map((c) => c.id), rng); // 카드 id 배열을 셔플
+  const builtDeck = buildDeck(opts);
+  setCurrentDeck(builtDeck); // getCard() 가 이 게임의 덱을 기준으로 동작하게 설정
+  const deck = shuffle(builtDeck.map((c) => c.id), rng); // 카드 id 배열을 셔플
 
   const players = configs.map((c, i) => ({
     index: i,
@@ -65,6 +67,7 @@ export function createGame(configs, seed, opts = {}) {
   return {
     seed,
     configs,
+    opts,
     players,
     zones,
     drawPile: deck, // 남은 카드 = 드로우 더미 (pop으로 뽑음)

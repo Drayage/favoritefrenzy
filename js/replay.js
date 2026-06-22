@@ -12,7 +12,7 @@ function clone(s) { return structuredClone(s); }
 // 프레임 빌드
 function buildFrames(record) {
   const frames = [];
-  const state = createGame(record.configs, record.seed);
+  const state = createGame(record.configs, record.seed, record.opts || {});
   frames.push({ state: clone(state), desc: '🎬 게임 시작!', actor: null });
   for (const action of record.log) {
     const actor = state.players[state.current];

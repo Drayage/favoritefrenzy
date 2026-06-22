@@ -228,6 +228,7 @@ async function finishGame() {
       date: Date.now(),
       configs: state.configs,
       seed: state.seed,
+      opts: state.opts || {},
       log: state.log,
       winner: state.winner,
       scores: state.players.map((_, i) => score(state, i)),
@@ -321,7 +322,7 @@ async function finishOnline(data) {
   G.saved = true;
   const record = {
     id: 'g_' + Date.now(), date: Date.now(), configs: G.configs,
-    seed: G.seed, log: G.state.log, winner: G.state.winner,
+    seed: G.seed, opts: G.state.opts || {}, log: G.state.log, winner: G.state.winner,
     scores: G.state.players.map((_, i) => score(G.state, i)), online: true,
   };
   saveReplay(record);

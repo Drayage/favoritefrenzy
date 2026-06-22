@@ -59,8 +59,15 @@ export function buildDeck(opts = {}) {
 // 카드 id -> 카드 정의 조회용 고정 테이블.
 // buildDeck()는 항상 동일한 순서/ id(0..69)를 생성하므로 인덱스가 곧 id다.
 export const CARD_TABLE = buildDeck();
+
+// 현재 진행 중인 게임의 덱 인덱스 (opts가 다를 때 CARD_TABLE 대체)
+let _deckIndex = null;
+export function setCurrentDeck(deck) {
+  _deckIndex = {};
+  for (const c of deck) _deckIndex[c.id] = c;
+}
 export function getCard(id) {
-  return CARD_TABLE[id];
+  return (_deckIndex && _deckIndex[id] !== undefined) ? _deckIndex[id] : CARD_TABLE[id];
 }
 
 // 카드 1장의 짧은 표시 이름

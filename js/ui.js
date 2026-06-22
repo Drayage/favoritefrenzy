@@ -243,7 +243,7 @@ export async function animate(events, state, viewer) {
       if (targetZone) targetZone.classList.add('pushing');
       // 1. 폭발 존 흔들기
       const fromZ = $(`.zone[data-pet="${ev.pet}"]`);
-      if (fromZ) { fromZ.classList.add('explode'); sound.sfxExplode(); await wait(300); fromZ.classList.remove('explode'); }
+      if (fromZ) { setWink(fromZ, randomWink()); fromZ.classList.add('explode'); sound.sfxExplode(); await wait(300); fromZ.classList.remove('explode'); clearWink(fromZ); }
 
       // 2. 스캔 — 폭발 존 rank-1 부터 target rank 까지 순서대로 pulse
       const fromRank = PET_BY_KEY[ev.pet].rank;
@@ -274,7 +274,7 @@ export async function animate(events, state, viewer) {
 
     } else if (ev.type === 'explode' && ev.failed) {
       const z = $(`.zone[data-pet="${ev.pet}"]`);
-      if (z) { z.classList.add('explode'); sound.sfxExplode(); await wait(360); z.classList.remove('explode'); }
+      if (z) { setWink(z, randomWink()); z.classList.add('explode'); sound.sfxExplode(); await wait(360); z.classList.remove('explode'); clearWink(z); }
       floatText(z || document.body, '❌ 실패');
 
     } else if (ev.type === 'push') {
@@ -283,7 +283,7 @@ export async function animate(events, state, viewer) {
 
     } else if (ev.type === 'toy') {
       const z = $(`.zone[data-pet="${ev.zone}"]`);
-      if (z) { z.classList.add('explode'); await wait(150); z.classList.remove('explode'); }
+      if (z) { setWink(z, randomWink()); z.classList.add('explode'); await wait(150); z.classList.remove('explode'); clearWink(z); }
       sound.sfxExplode();
       await showSpecialEffect('🧸', `${PET_BY_KEY[ev.zone].name} 존 전부 제거!`, `${ev.count}장 날아감`, 950);
 
@@ -322,8 +322,9 @@ async function _animatePush(ev, state) {
   // 애니메이션 중에는 강제로 불투명하게 유지
   tz.classList.add('pushing');
   const gain = ev.defended ? 1 : (ev.cards ? ev.cards.length : 0) + (ev.badgeBonus ? 1 : 0);
-  floatText(tz, ev.defended ? '🛏️ 방어!' : `💗 +${gain}`);
-  heartBurst(tz);
+  const label = ev.defended ? '🛏️ 방어!' : gain >= 7 ? `💗💗 +${gain}!!` : gain >= 5 ? `💗 +${gain}!` : `💗 +${gain}`;
+  floatText(tz, label, ev.defended ? 1 : gain);
+  heartBurst(tz, ev.defended ? 1 : gain);
   sound.sfxPush();
   await wait(180);
   tz.classList.add('pushed');
@@ -332,12 +333,15 @@ async function _animatePush(ev, state) {
   tz.classList.remove('pushing');
 }
 
+function randomWink() { const r = Math.random(); return r < 0.1 ? 'both' : r < 0.45 ? 'left' : 'right'; }
+function setWink(el, w) { el.dataset.wink = w; }
+function clearWink(el) { delete el.dataset.wink; }
 function pop(el) { el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
 function wait(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
-function floatText(anchor, text) {
+function floatText(anchor, text, gain = 1) {
   const f = document.createElement('div');
-  f.className = 'float-text';
+  f.className = 'float-text' + (gain >= 7 ? ' ft-xl' : gain >= 5 ? ' ft-lg' : gain >= 3 ? ' ft-md' : '');
   f.textContent = text;
   const r = anchor.getBoundingClientRect?.() || { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 0 };
   f.style.left = `${r.left + r.width / 2}px`;
@@ -346,17 +350,33 @@ function floatText(anchor, text) {
   setTimeout(() => f.remove(), 1100);
 }
 
-function heartBurst(anchor) {
+function heartBurst(anchor, gain = 1) {
   const r = anchor.getBoundingClientRect();
-  for (let i = 0; i < 6; i++) {
+  const count  = gain >= 7 ? 22 : gain >= 5 ? 14 : gain >= 3 ? 10 : 6;
+  const fsize  = gain >= 7 ? '2em' : gain >= 5 ? '1.5em' : gain >= 3 ? '1.2em' : '1em';
+  const spread = gain >= 7 ? 200 : gain >= 5 ? 150 : 130;
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  for (let i = 0; i < count; i++) {
     const h = document.createElement('div');
     h.className = 'heart';
     h.textContent = '💗';
-    h.style.left = `${r.left + r.width / 2}px`;
-    h.style.top = `${r.top + r.height / 2}px`;
-    h.style.setProperty('--dx', `${(Math.random() - 0.5) * 120}px`);
-    h.style.setProperty('--dy', `${-40 - Math.random() * 80}px`);
+    h.style.left = `${cx}px`;
+    h.style.top = `${cy}px`;
+    h.style.fontSize = fsize;
+    h.style.setProperty('--dx', `${(Math.random() - 0.5) * spread}px`);
+    h.style.setProperty('--dy', `${-40 - Math.random() * 100}px`);
+    h.style.animationDelay = `${i * 18}ms`;
     document.body.appendChild(h);
-    setTimeout(() => h.remove(), 1000);
+    setTimeout(() => h.remove(), 1200);
+  }
+  if (gain >= 7) {
+    const burst = document.createElement('div');
+    burst.className = 'heart-explosion';
+    burst.textContent = '💗';
+    burst.style.left = `${cx}px`;
+    burst.style.top = `${cy}px`;
+    burst.style.fontSize = '3rem';
+    document.body.appendChild(burst);
+    setTimeout(() => burst.remove(), 800);
   }
 }
