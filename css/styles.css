@@ -146,8 +146,12 @@ input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--pink-d); }
 @keyframes pop { 0% { transform: translate(-50%,-50%) scale(1);} 40% { transform: translate(-50%,-50%) scale(1.28);} 100% { transform: translate(-50%,-50%) scale(1);} }
 .zone.explode { animation: shake .36s; }
 @keyframes shake { 0%,100% { transform: translate(-50%,-50%) rotate(0);} 25% { transform: translate(-52%,-50%) rotate(-6deg);} 75% { transform: translate(-48%,-50%) rotate(6deg);} }
-.zone.pushed { animation: pushaway .5s ease; }
-@keyframes pushaway { 0% { transform: translate(-50%,-50%);} 50% { transform: translate(-50%,-30%) scale(.85); opacity: .5;} 100% { transform: translate(-50%,-50%);} }
+.zone.pushed { animation: pushaway .44s ease; }
+@keyframes pushaway {
+  0%   { transform: translate(-50%,-50%) scale(1);    opacity: 1;    }
+  40%  { transform: translate(-50%,-50%) scale(0.86); opacity: 0.30; }
+  100% { transform: translate(-50%,-50%) scale(1);    opacity: 1;    }
+}
 .zone.sparkle { animation: sparkle .6s; }
 @keyframes sparkle { 0%,100% { filter: none;} 50% { filter: drop-shadow(0 0 10px gold) brightness(1.2);} }
 
@@ -305,6 +309,25 @@ input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--pink-d); }
 }
 .modal-body .btn { width: 100%; margin-bottom: 8px; }
 .modal-body .btn:last-child { margin-bottom: 0; }
+
+/* ── 시계방향 표시 & 고슴도치↔고양이 경계 벽 ──────────── */
+.dir-cw {
+  display: block;
+  font-size: 1.1rem;
+  color: var(--ink-soft);
+  line-height: 1;
+  margin-top: 2px;
+  letter-spacing: -1px;
+}
+.zone-wall {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: 1.1rem;
+  z-index: 3;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,.15));
+  line-height: 1;
+}
 
 /* 반응형 */
 @media (min-width: 540px) {
