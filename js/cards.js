@@ -23,10 +23,10 @@ export const PET_KEYS_DESC = PETS.slice().sort((a, b) => b.rank - a.rank).map((p
 // 특수카드 정의
 export const SPECIALS = {
   transform: { key: 'transform', name: '카멜레온',  count: 2, desc: '아무 반려동물로 변신해 합산 가능',    emoji: '🦎' },
-  toy:       { key: 'toy',       name: '낚싯대',   count: 1, desc: '선택한 존의 카드를 전부 낚아 제거',   emoji: '🎣' },
-  treat:     { key: 'treat',     name: '선물 상자', count: 1, desc: '상대와 손패를 전부 교환',           emoji: '🎁' },
-  cushion:   { key: 'cushion',   name: '방패',      count: 1, desc: '다음 밀어내기 1회 방어',           emoji: '🛡️' },
-  badge:     { key: 'badge',     name: '응원 리본', count: 1, desc: '지정 펫 밀려날 때마다 +1쓰담',     emoji: '🎀' },
+  toy:       { key: 'toy',       name: '장난감',     count: 1, desc: '선택한 존의 카드를 전부 제거',    emoji: '🎣' },
+  treat:     { key: 'treat',     name: '장난꾸러기', count: 1, desc: '상대와 손패를 전부 교환',          emoji: '🎁' },
+  cushion:   { key: 'cushion',   name: '침대 아래',  count: 1, desc: '다음 밀어내기 1회 방어',          emoji: '🛡️' },
+  badge:     { key: 'badge',     name: '최애 배찌',  count: 1, desc: '지정 펫 밀려날 때마다 +1쓰담',    emoji: '🎀' },
 };
 
 export const PETS_PER_TYPE = 8;

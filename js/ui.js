@@ -260,7 +260,7 @@ export async function animate(events, state, viewer) {
       const z = $(`.zone[data-pet="${ev.zone}"]`);
       if (z) { z.classList.add('explode'); await wait(150); z.classList.remove('explode'); }
       sound.sfxExplode();
-      await showSpecialEffect('🎣', `${PET_BY_KEY[ev.zone].name} 존 전부 낚아 제거!`, `${ev.count}장 날아감`, 950);
+      await showSpecialEffect('🎣', `${PET_BY_KEY[ev.zone].name} 존 전부 제거!`, `${ev.count}장 날아감`, 950);
 
     } else if (ev.type === 'cushion') {
       const z = $(`.zone[data-pet="${ev.zone}"]`);
@@ -270,7 +270,7 @@ export async function animate(events, state, viewer) {
 
     } else if (ev.type === 'badge') {
       sound.sfxBadge();
-      await showSpecialEffect('🎀', `응원 리본 → ${PET_BY_KEY[ev.pet].name}`, '밀려날 때마다 +1쓰담', 900);
+      await showSpecialEffect('🎀', `최애 배찌 → ${PET_BY_KEY[ev.pet].name}`, '밀려날 때마다 +1쓰담', 900);
       const z = $(`.zone[data-pet="${ev.pet}"]`);
       if (z) { z.classList.add('sparkle'); await wait(600); z.classList.remove('sparkle'); }
 
