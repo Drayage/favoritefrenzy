@@ -20,8 +20,10 @@ const PETS_SVG = {
   cat: (c) => `
     ${triEar(28, 30, c)} ${triEar(72, 30, c)}
     ${face(c, `
-      <path d="M36 56 q5 4 10 0" stroke="${EYE}" stroke-width="3" fill="none" stroke-linecap="round"/>
-      <path d="M54 56 q5 4 10 0" stroke="${EYE}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <g class="pet-eyes">
+        <path d="M36 56 q5 4 10 0" stroke="${EYE}" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M54 56 q5 4 10 0" stroke="${EYE}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
       <path d="M47 66 q3 3 6 0" stroke="${EYE}" stroke-width="2.5" fill="none" stroke-linecap="round"/>
       <g stroke="${EYE}" stroke-width="1.6" stroke-linecap="round">
         <line x1="22" y1="62" x2="36" y2="63"/><line x1="22" y1="68" x2="36" y2="67"/>
@@ -75,7 +77,7 @@ const PETS_SVG = {
   ferret: (c) => `
     ${triEar(34, 34, c)} ${triEar(66, 34, c)}
     ${face(c, `
-      <path d="M34 56 q4 -4 8 0" stroke="${EYE}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <g class="pet-eyes"><path d="M34 56 q4 -4 8 0" stroke="${EYE}" stroke-width="3" fill="none" stroke-linecap="round"/></g>
       ${eye(62, 56)}
       <ellipse cx="50" cy="64" rx="3.5" ry="3" fill="${EYE}"/>
       <path d="M44 70 q6 6 12 0" stroke="${EYE}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
@@ -93,7 +95,7 @@ const PETS_SVG = {
 
 // 부품들
 function eye(x, y, r = 5.5) {
-  return `<circle cx="${x}" cy="${y}" r="${r}" fill="${EYE}"/><circle cx="${x + r * 0.35}" cy="${y - r * 0.35}" r="${r * 0.35}" fill="#fff"/>`;
+  return `<g class="pet-eyes"><circle cx="${x}" cy="${y}" r="${r}" fill="${EYE}"/><circle cx="${x + r * 0.35}" cy="${y - r * 0.35}" r="${r * 0.35}" fill="#fff"/></g>`;
 }
 function triEar(x, y, c) {
   return `<path d="M${x - 12} ${y + 14} L${x} ${y - 8} L${x + 12} ${y + 14} Z" fill="${c}"/>`;

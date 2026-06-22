@@ -122,3 +122,7 @@ export function sfxScan(step) {
 export function sfxEnd() {
   [523, 659, 784, 1047].forEach((f, i) => tone(f, 'sine', 0.26, 0.32, null, i * 0.18));
 }
+
+export function sfxFanfare() {
+  [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 'sine', 0.30, 0.38, null, i * 0.13));
+}

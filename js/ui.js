@@ -52,7 +52,7 @@ export function renderZones(state, board) {
     el.style.left = `${50 + Math.cos(ang) * 41}%`;
     el.style.top = `${50 + Math.sin(ang) * 41}%`;
     el.style.setProperty('--card-color', pet.color);
-    const badge = state.badge && state.badge.pet === key ? '<span class="z-badge" title="최애 배찌">🏅</span>' : '';
+    const badge = state.badge && state.badge.pet === key ? '<span class="z-badge" title="최애리본">🎀</span>' : '';
     const cushion = z.cushionCardId != null ? '<span class="z-cushion" title="침대 아래">🛏️</span>' : '';
     el.innerHTML = `
       <div class="z-art">${petSVG(key)}${badge}${cushion}</div>
@@ -290,7 +290,7 @@ export async function animate(events, state, viewer) {
 
     } else if (ev.type === 'badge') {
       sound.sfxBadge();
-      await showSpecialEffect('🏅', `최애 배찌 → ${PET_BY_KEY[ev.pet].name}`, '밀려날 때마다 +1쓰담', 900);
+      await showSpecialEffect('🎀', `최애리본 → ${PET_BY_KEY[ev.pet].name}`, '밀려날 때마다 +1쓰담', 900);
       const z = $(`.zone[data-pet="${ev.pet}"]`);
       if (z) { z.classList.add('sparkle'); await wait(600); z.classList.remove('sparkle'); }
 

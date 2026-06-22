@@ -33,15 +33,16 @@ export function previewPlayPets(state, pet, cardIds) {
     return `${petName} 폭발! 💥 → ${targetName} 🛏️ 방어 예상 (+1쓰담)`;
 
   const gain = tz.cards.length + (state.badge && state.badge.pet === targetKey ? 1 : 0);
-  const badgeNote = state.badge && state.badge.pet === targetKey ? ' 🏅+1' : '';
+  const badgeNote = state.badge && state.badge.pet === targetKey ? ' 🎀+1' : '';
   return `${petName} 폭발! 💥 → ${targetName} 밀어내기 +${gain}쓰담${badgeNote}`;
 }
 
 // ── 상태 생성 ─────────────────────────────────────────────
 // configs: [{ name, isAI, difficulty }] (2~4명)
-export function createGame(configs, seed) {
+// opts: { petsPerType, specialCount } — buildDeck 파라미터 (미저장, 게임별 설정)
+export function createGame(configs, seed, opts = {}) {
   const rng = makeRng(seed);
-  const deck = shuffle(buildDeck().map((c) => c.id), rng); // 카드 id 배열을 셔플
+  const deck = shuffle(buildDeck(opts).map((c) => c.id), rng); // 카드 id 배열을 셔플
 
   const players = configs.map((c, i) => ({
     index: i,

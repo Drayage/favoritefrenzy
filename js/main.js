@@ -48,9 +48,11 @@ function init() {
 function bind(sel, fn) { const el = ui.$(sel); if (el) el.addEventListener('click', fn); }
 
 // ── 플레이 설정 ──────────────────────────────────────────
-let setup = { total: 2, ai: 1, difficulty: settings.difficulty || 'normal' };
+let setup = { total: 2, ai: 1, difficulty: settings.difficulty || 'normal', petsPerType: 8, specialCount: 1 };
 function renderSetup() {
   setup.difficulty = settings.difficulty || 'normal';
+  setup.petsPerType = 8;
+  setup.specialCount = 1;
   const box = ui.$('#setup-body');
   box.innerHTML = `
     <label class="field"><span>플레이 인원</span>
@@ -59,12 +61,24 @@ function renderSetup() {
     <label class="field"><span>AI 난이도</span>
       <div class="seg" id="seg-diff">
         <button data-v="easy">쉬움</button><button data-v="normal">보통</button><button data-v="hard">어려움</button></div></label>
+    <label class="field slider-field">
+      <span>동물당 카드 수: <b id="val-pets">8</b>장</span>
+      <input type="range" id="sl-pets" min="6" max="12" value="8">
+    </label>
+    <label class="field slider-field">
+      <span>특수카드 수 (타입당): <b id="val-spec">1</b>장</span>
+      <input type="range" id="sl-spec" min="0" max="4" value="1">
+    </label>
     <p class="setup-note" id="setup-note"></p>
     <button class="btn primary big" id="setup-start">🐾 게임 시작</button>`;
   segWire('#seg-total', setup.total, (v) => { setup.total = v; if (setup.ai > v - 1) setup.ai = v - 1; renderAiSeg(); updateNote(); });
   segWire('#seg-diff', setup.difficulty, (v) => { setup.difficulty = v; });
   renderAiSeg();
   updateNote();
+  const slPets = ui.$('#sl-pets');
+  slPets.addEventListener('input', () => { setup.petsPerType = +slPets.value; ui.$('#val-pets').textContent = slPets.value; });
+  const slSpec = ui.$('#sl-spec');
+  slSpec.addEventListener('input', () => { setup.specialCount = +slSpec.value; ui.$('#val-spec').textContent = slSpec.value; });
   ui.$('#setup-start').onclick = startLocalGame;
 
   function renderAiSeg() {
@@ -102,7 +116,7 @@ function startLocalGame() {
   const configs = [];
   for (let i = 0; i < humans; i++) configs.push({ name: humans > 1 ? `${settings.playerName} ${i + 1}` : settings.playerName, isAI: false });
   for (let i = 0; i < setup.ai; i++) configs.push({ name: AI_NAMES[i % AI_NAMES.length], isAI: true, difficulty: setup.difficulty });
-  ctrl.startLocal(configs);
+  ctrl.startLocal(configs, { petsPerType: setup.petsPerType, specialCount: setup.specialCount });
 }
 
 // ── 리플레이 목록 ────────────────────────────────────────

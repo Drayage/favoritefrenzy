@@ -11,10 +11,10 @@ import * as sound from './sound.js';
 let G = null; // 현재 세션
 
 // ── 로컬 게임 시작 ────────────────────────────────────────
-export function startLocal(configs) {
+export function startLocal(configs, opts = {}) {
   sound.initAudio();
   const seed = randomSeed();
-  const state = createGame(configs, seed);
+  const state = createGame(configs, seed, opts);
   G = {
     mode: 'local', state, configs, seed,
     humanIndexes: configs.map((c, i) => (c.isAI ? -1 : i)).filter((i) => i >= 0),
@@ -190,7 +190,7 @@ async function handleSpecial(special) {
     const zone = await ui.pickZone(state, '🛏️ 어느 존을 방어할까요?', { onlyNonEmpty: true, noCushion: true });
     if (zone) action = { type: 'cushion', zone };
   } else if (special === 'badge') {
-    const pet = await ui.pickPet('🏅 최애 배찌로 인증할 반려동물은?');
+    const pet = await ui.pickPet('🎀 최애리본으로 인증할 반려동물은?');
     if (pet) action = { type: 'badge', pet };
   } else if (special === 'treat') {
     const target = await ui.pickPlayer(state, G.viewer, '🎪 누구와 손패를 교환할까요?');
@@ -251,6 +251,7 @@ function showResult(state) {
     <p class="win-sub">오늘의 쓰담왕이 결정됐어요</p>
     <div class="result-list">${rows}</div>`;
   ui.showScreen('screen-result');
+  setTimeout(() => sound.sfxFanfare(), 350);
 }
 
 export function rematch() {

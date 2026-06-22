@@ -26,7 +26,7 @@ export const SPECIALS = {
   toy:       { key: 'toy',       name: '장난감',     count: 1, desc: '선택한 존의 카드를 전부 제거',    emoji: '🧸' },
   treat:     { key: 'treat',     name: '장난꾸러기', count: 1, desc: '상대와 손패를 전부 교환',          emoji: '🎪' },
   cushion:   { key: 'cushion',   name: '침대 아래',  count: 1, desc: '다음 밀어내기 1회 방어',          emoji: '🛏️' },
-  badge:     { key: 'badge',     name: '최애 배찌',  count: 1, desc: '지정 펫 밀려날 때마다 +1쓰담',    emoji: '🏅' },
+  badge:     { key: 'badge',     name: '최애리본',   count: 1, desc: '지정 펫 밀려날 때마다 +1쓰담',    emoji: '🎀' },
 };
 
 export const PETS_PER_TYPE = 8;
@@ -35,20 +35,25 @@ export const EXPLODE_AT = 3; // 관심 폭발 임계치
 
 // 전체 덱(카드 객체 배열, 고유 id 부여) 생성.
 // 카드: { id, type:'pet'|'special', pet?, rank?, special? }
-export function buildDeck() {
+// opts.petsPerType — 펫 타입당 장수 (기본: PETS_PER_TYPE)
+// opts.specialCount — 특수카드 타입당 장수 (기본: 각 타입의 count)
+export function buildDeck(opts = {}) {
+  const ppt = opts.petsPerType ?? PETS_PER_TYPE;
+  const sc  = opts.specialCount != null ? opts.specialCount : null;
   const deck = [];
   let id = 0;
   for (const p of PETS) {
-    for (let i = 0; i < PETS_PER_TYPE; i++) {
+    for (let i = 0; i < ppt; i++) {
       deck.push({ id: id++, type: 'pet', pet: p.key, rank: p.rank });
     }
   }
   for (const s of Object.values(SPECIALS)) {
-    for (let i = 0; i < s.count; i++) {
+    const cnt = sc !== null ? sc : s.count;
+    for (let i = 0; i < cnt; i++) {
       deck.push({ id: id++, type: 'special', special: s.key });
     }
   }
-  return deck; // 총 70장
+  return deck;
 }
 
 // 카드 id -> 카드 정의 조회용 고정 테이블.

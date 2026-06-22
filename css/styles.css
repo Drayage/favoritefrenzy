@@ -79,6 +79,7 @@ body {
 .setup-note { background: var(--white); border-radius: var(--radius-sm); padding: 12px; color: var(--ink-soft); box-shadow: var(--shadow-sm); }
 .btn.big.primary, .btn.primary.big { width: 100%; margin-top: 8px; }
 input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--pink-d); }
+.slider-field input[type=range] { width: 100%; accent-color: var(--pink-d); margin-top: 4px; }
 
 /* ── 게임 화면 ── */
 .game-top { display: flex; align-items: center; gap: 8px; padding: 10px 12px; padding-top: max(10px, env(safe-area-inset-top)); }
@@ -94,7 +95,7 @@ input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--pink-d); }
 /* 보드 (팔각형 존 배치) */
 .board { position: relative; width: min(94vw, 460px); aspect-ratio: 1; margin: 4px auto; }
 .zones { position: absolute; inset: 0; }
-.center { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); text-align: center; }
+.center { position: absolute; left: 50%; top: 58%; transform: translate(-50%,-50%); text-align: center; }
 .draw-pile { position: relative; width: 46px; height: 64px; border-radius: 10px; background: repeating-linear-gradient(135deg, #ffd9e6, #ffd9e6 6px, #ffeaf1 6px, #ffeaf1 12px); box-shadow: var(--shadow); margin: 0 auto; }
 .draw-pile::after {
   content: attr(data-count);
@@ -156,6 +157,8 @@ input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--pink-d); }
 @keyframes pop { 0% { transform: translate(-50%,-50%) scale(1);} 40% { transform: translate(-50%,-50%) scale(1.28);} 100% { transform: translate(-50%,-50%) scale(1);} }
 .zone.explode { animation: shake .36s; }
 @keyframes shake { 0%,100% { transform: translate(-50%,-50%) rotate(0);} 25% { transform: translate(-52%,-50%) rotate(-6deg);} 75% { transform: translate(-48%,-50%) rotate(6deg);} }
+.zone.explode .pet-eyes { transform-box: fill-box; transform-origin: center; animation: eye-squint 0.36s; }
+@keyframes eye-squint { 0%,100% { transform: scaleY(1); } 35%,65% { transform: scaleY(0.1); } }
 .zone.pushed  { animation: pushaway .46s ease; }
 .zone.pushing { opacity: 1 !important; filter: none !important; }
 @keyframes pushaway {
@@ -191,6 +194,10 @@ input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--pink-d); }
 /* 결과 */
 .result-wrap { margin: auto; text-align: center; padding: 24px; max-width: 420px; width: 100%; }
 .win-title { font-size: 1.8rem; color: #7a3b4f; }
+#screen-result.active .win-title { animation: fanfareIn 0.7s cubic-bezier(.3,1.6,.4,1); }
+@keyframes fanfareIn { 0% { transform: scale(0.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+#screen-result.active .result-row.win { animation: winnerSlide 0.55s 0.25s ease both; }
+@keyframes winnerSlide { 0% { opacity: 0; transform: translateY(14px) scale(0.95); } 100% { opacity: 1; transform: none; } }
 .win-sub { color: var(--ink-soft); margin-top: -6px; }
 .result-list { margin: 18px 0; display: flex; flex-direction: column; gap: 8px; }
 .result-row { display: flex; align-items: center; gap: 10px; background: var(--white); border-radius: var(--radius-sm); padding: 12px 16px; box-shadow: var(--shadow-sm); }
