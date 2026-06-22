@@ -275,7 +275,18 @@ function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&am
 
 // ── 서비스워커 ───────────────────────────────────────────
 function registerSW() {
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
-  }
+  if (!('serviceWorker' in navigator)) return;
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js');
+      reg.update(); // 방문 시 새 버전 능동 확인
+    } catch {}
+  });
+  // 새 SW가 제어권을 잡으면 1회만 새로고침해 최신 자산 반영 (무한 루프 방지 가드)
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloaded) return;
+    reloaded = true;
+    window.location.reload();
+  });
 }
