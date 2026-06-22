@@ -1,18 +1,8 @@
 rules_version = '2';
-// 최애 쟁탈전 멀티플레이 Firestore 보안 규칙.
-// Firebase 콘솔 → Firestore Database → Rules 탭에 붙여넣고 게시하세요.
-// 또는: firebase deploy --only firestore:rules
 service cloud.firestore {
   match /databases/{database}/documents {
     match /rooms/{code} {
-      // 누구나 방을 읽고 쓸 수 있음 (게임 코드 기반 접근 제어)
-      allow read: if true;
-      allow create: if request.resource.data.keys().hasAll(['code','hostId','status','seed','players','log'])
-                    && request.resource.data.status == 'lobby'
-                    && request.resource.data.players.size() >= 1;
-      allow update: if resource.data.status != 'ended'
-                    || request.resource.data.status == 'ended';
-      allow delete: if true;
+      allow read, write: if true;
     }
   }
 }
