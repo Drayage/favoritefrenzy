@@ -227,8 +227,9 @@ input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--pink-d); }
 
 /* ── 빈 존 비주얼 ────────────────────────────────────────── */
 .zone.empty {
-  opacity: 0.32;
-  filter: grayscale(0.65);
+  filter: grayscale(0.75) brightness(0.88);
+  border-style: dashed;
+  box-shadow: none;
 }
 .zone.empty .z-count { visibility: hidden; }
 
