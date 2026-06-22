@@ -10,17 +10,53 @@ import * as sound from './sound.js';
 
 let G = null; // 현재 세션
 
+// ── 세션 저장/복구 ───────────────────────────────────────
+function saveSession() {
+  if (!G) return;
+  if (G.mode === 'local') {
+    sessionStorage.setItem('ff_session', JSON.stringify({
+      mode: 'local', seed: G.seed, configs: G.configs,
+      opts: G.opts || {}, log: G.state.log, viewer: G.viewer,
+    }));
+  } else if (G.mode === 'online') {
+    sessionStorage.setItem('ff_session', JSON.stringify({ mode: 'online', code: G.code }));
+  }
+}
+export function clearSession() { sessionStorage.removeItem('ff_session'); }
+
 // ── 로컬 게임 시작 ────────────────────────────────────────
 export function startLocal(configs, opts = {}) {
   sound.initAudio();
   const seed = randomSeed();
   const state = createGame(configs, seed, opts);
   G = {
-    mode: 'local', state, configs, seed,
+    mode: 'local', state, configs, seed, opts,
     humanIndexes: configs.map((c, i) => (c.isAI ? -1 : i)).filter((i) => i >= 0),
     viewer: 0, selected: new Set(), busy: false, saved: false,
   };
   G.viewer = G.humanIndexes[0] ?? 0;
+  ui.showScreen('screen-game');
+  wireHand();
+  runLocal();
+}
+
+// ── 로컬 게임 복구 (새로고침 후 세션 복원) ───────────────
+export function resumeLocalGame(record) {
+  sound.initAudio();
+  const { configs, seed, opts, log, viewer } = record;
+  const state = createGame(configs, seed, opts || {});
+  for (const action of log) applyAction(state, action);
+  if (state.phase === 'ended') {
+    clearSession();
+    G = { mode: 'local', state, configs, seed, opts: opts || {}, humanIndexes: [], viewer: viewer ?? 0, selected: new Set(), busy: false, saved: true };
+    showResult(state);
+    return;
+  }
+  G = {
+    mode: 'local', state, configs, seed, opts: opts || {},
+    humanIndexes: configs.map((c, i) => (c.isAI ? -1 : i)).filter((i) => i >= 0),
+    viewer: viewer ?? 0, selected: new Set(), busy: false, saved: false,
+  };
   ui.showScreen('screen-game');
   wireHand();
   runLocal();
@@ -56,6 +92,7 @@ async function aiTurn() {
   await delay(550);
   const action = chooseAction(state, state.players[state.current].difficulty);
   const events = applyAction(state, action);
+  saveSession();
   ui.renderAll(state, G.viewer, { selectable: false });
   await ui.animate(events, state, G.viewer);
   G.busy = false;
@@ -135,11 +172,13 @@ function renderActionBar() {
   const bar = ui.$('#actions');
   bar.innerHTML = '';
   const { state } = G;
+  if (state.phase !== 'playing') return;
   const cur = state.players[state.current];
-  const myTurn = !cur.isAI && cur.index === G.viewer && state.phase === 'playing' && !G.busy;
-  if (!myTurn) { bar.innerHTML = '<span class="wait">상대의 차례를 기다리는 중…</span>'; return; }
+  const myTurn = !cur.isAI && cur.index === G.viewer && !G.busy;
 
-  if (G.selected.size > 0) {
+  if (!myTurn) {
+    bar.innerHTML = '<span class="wait">상대의 차례를 기다리는 중…</span>';
+  } else if (G.selected.size > 0) {
     const pet = currentSelectedPet();
     const label = pet ? PET_BY_KEY[pet].name : '펫 선택';
     bar.appendChild(button(`🐾 ${label} ${G.selected.size}장 내기`, 'primary', confirmPetPlay));
@@ -148,7 +187,6 @@ function renderActionBar() {
       ui.renderHand(state, G.viewer, { selectable: true, selected: G.selected });
       renderActionBar();
     }));
-    // 예상 효과 미리보기
     if (pet) {
       const preview = previewPlayPets(state, pet, [...G.selected]);
       const el = document.createElement('div');
@@ -162,6 +200,10 @@ function renderActionBar() {
       bar.appendChild(button('패스', 'ghost', () => submit({ type: 'pass' })));
     }
   }
+
+  // 항복 버튼 (항상 표시)
+  const b = button('🏳️ 항복', 'ghost tiny surrender-btn', surrender);
+  bar.appendChild(b);
 }
 
 function makeHint() {
@@ -209,15 +251,39 @@ async function submit(action) {
   let events;
   try { events = applyAction(G.state, action); }
   catch (e) { ui.toast('⚠️ ' + e.message); G.busy = false; renderActionBar(); return; }
+  saveSession();
   ui.renderAll(G.state, G.viewer, { selectable: false });
   await ui.animate(events, G.state, G.viewer);
   G.busy = false;
   runLocal();
 }
 
+// ── 항복 ─────────────────────────────────────────────────
+export async function surrender() {
+  if (!G || G.state.phase !== 'playing') return;
+  if (!confirm('항복하고 게임을 끝낼까요?')) return;
+  clearSession();
+  if (G.mode === 'local') {
+    const { state } = G;
+    const scores = state.players.map((_, i) => score(state, i));
+    const best = Math.max(...scores);
+    const winners = scores.reduce((acc, s, i) => { if (s === best) acc.push(i); return acc; }, []);
+    state.phase = 'ended';
+    state.winner = winners.length === 1 ? winners[0] : winners;
+    G.busy = false;
+    finishGame();
+  } else {
+    if (G.unsub) G.unsub();
+    net.leaveRoom(G.code).catch(() => {});
+    G = null;
+    ui.showScreen('screen-menu');
+  }
+}
+
 // ── 종료/결과 ────────────────────────────────────────────
 async function finishGame() {
   const { state } = G;
+  clearSession();
   sound.sfxEnd();
   ui.renderAll(state, G.viewer, { selectable: false });
   ui.$('#actions').innerHTML = '';
@@ -260,21 +326,23 @@ function showResult(state) {
 
 export function rematch() {
   if (!G) return;
-  if (G.mode === 'local') startLocal(G.configs);
+  if (G.mode === 'local') startLocal(G.configs, G.opts || {});
 }
 
 // ── 온라인 ───────────────────────────────────────────────
 export async function startOnline(code, roomData) {
   sound.initAudio();
   const myUid = net.clientId();
-  const configs = roomData.players.map((p) => ({ name: p.name, isAI: false, difficulty: 'normal', uid: p.uid }));
+  const configs = roomData.players.map((p) => ({ name: p.name, isAI: p.isAI || false, difficulty: p.difficulty || 'normal', uid: p.uid }));
   const viewer = roomData.players.findIndex((p) => p.uid === myUid);
+  const opts = roomData.opts || {};
   G = {
-    mode: 'online', code, configs, seed: roomData.seed, viewer,
-    state: reconstruct(configs, roomData.seed, roomData.log || []),
+    mode: 'online', code, configs, seed: roomData.seed, opts, viewer,
+    state: reconstruct(configs, roomData.seed, roomData.log || [], opts),
     selected: new Set(), busy: false, saved: false, prevLogLen: (roomData.log || []).length,
-    isHost: roomData.hostId === myUid,
+    isHost: roomData.hostId === myUid, aiLock: false,
   };
+  saveSession();
   ui.showScreen('screen-game');
   wireHand();
   G.unsub = await net.subscribe(code, (data) => onSnapshot(data));
@@ -285,7 +353,7 @@ async function onSnapshot(data) {
   if (!G || G.mode !== 'online') return;
   const newLog = data.log || [];
   if (newLog.length > G.prevLogLen) {
-    const pre = reconstruct(G.configs, G.seed, newLog.slice(0, G.prevLogLen));
+    const pre = reconstruct(G.configs, G.seed, newLog.slice(0, G.prevLogLen), G.opts);
     G.state = pre;
     for (let i = G.prevLogLen; i < newLog.length; i++) {
       const events = applyAction(G.state, newLog[i]);
@@ -294,11 +362,24 @@ async function onSnapshot(data) {
     }
     G.prevLogLen = newLog.length;
   } else if (newLog.length < G.prevLogLen) {
-    G.state = reconstruct(G.configs, G.seed, newLog);
+    G.state = reconstruct(G.configs, G.seed, newLog, G.opts);
     G.prevLogLen = newLog.length;
   }
   renderOnline();
-  if (G.state.phase === 'ended') finishOnline(data);
+  if (G.state.phase === 'ended') { finishOnline(data); return; }
+
+  // 호스트가 AI 차례 처리
+  if (G.isHost && !G.aiLock && G.state.phase === 'playing') {
+    const cur = G.state.players[G.state.current];
+    if (cur.isAI) {
+      G.aiLock = true;
+      await delay(550);
+      if (!G) return;
+      const action = chooseAction(G.state, cur.difficulty);
+      try { await net.pushAction(G.code, action, G.state.log.length); } catch {}
+      if (G) G.aiLock = false;
+    }
+  }
 }
 
 function renderOnline() {
@@ -320,6 +401,7 @@ async function submitOnline(action) {
 async function finishOnline(data) {
   if (G.saved) return;
   G.saved = true;
+  clearSession();
   const record = {
     id: 'g_' + Date.now(), date: Date.now(), configs: G.configs,
     seed: G.seed, opts: G.state.opts || {}, log: G.state.log, winner: G.state.winner,
@@ -338,6 +420,7 @@ export function leaveOnline() {
   if (G && G.mode === 'online') {
     if (G.unsub) G.unsub();
     net.leaveRoom(G.code).catch(() => {});
+    clearSession();
   }
 }
 

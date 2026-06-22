@@ -79,10 +79,43 @@ export async function joinRoom(code, name) {
 }
 
 // 호스트가 게임 시작: 시드 확정 + status=playing
-export async function startGame(code) {
+export async function startGame(code, opts = {}) {
   const { db, fs } = await ensure();
   const ref = fs.doc(db, 'rooms', code);
-  await fs.updateDoc(ref, { seed: randomSeed(), status: 'playing', log: [] });
+  await fs.updateDoc(ref, { seed: randomSeed(), status: 'playing', log: [], opts });
+}
+
+// 호스트가 AI 플레이어 추가
+export async function addAIPlayer(code, name, difficulty) {
+  const { db, fs } = await ensure();
+  const uid = 'ai_' + Math.random().toString(36).slice(2, 8);
+  const ref = fs.doc(db, 'rooms', code);
+  await fs.runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists()) throw new Error('방이 없습니다');
+    const data = snap.data();
+    if (data.status !== 'lobby') throw new Error('이미 시작됨');
+    if (data.players.length >= 4) throw new Error('방이 가득 찼습니다 (최대 4명)');
+    tx.update(ref, { players: data.players.concat([{ uid, name, isAI: true, difficulty }]) });
+  });
+}
+
+// 호스트가 AI 플레이어 제거
+export async function removeAIPlayer(code, aiUid) {
+  const { db, fs } = await ensure();
+  const ref = fs.doc(db, 'rooms', code);
+  await fs.runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists()) return;
+    const data = snap.data();
+    tx.update(ref, { players: data.players.filter((p) => p.uid !== aiUid) });
+  });
+}
+
+// 호스트가 방 게임 설정 업데이트
+export async function updateRoomOpts(code, opts) {
+  const { db, fs } = await ensure();
+  await fs.updateDoc(fs.doc(db, 'rooms', code), { opts });
 }
 
 // 실시간 구독

@@ -30,20 +30,54 @@ function init() {
   bind('#menu-online', openOnline);
   if (!multiplayerEnabled) { const b = ui.$('#menu-online'); if (b) b.style.display = 'none'; }
 
+  // 이어하기 버튼
+  updateResumeBtn();
+  bind('#menu-resume', resumeSession);
+
   // 공통 뒤로가기
   ui.$$('[data-back]').forEach((b) => b.addEventListener('click', () => {
     if (b.dataset.back === 'leaveOnline') { ctrl.leaveOnline(); leaveLobby(); }
     if (b.dataset.back === 'replay') replay.closeReplay();
     ui.showScreen('screen-menu');
+    updateResumeBtn();
   }));
 
   // 결과 화면 버튼
   bind('#result-rematch', () => ctrl.rematch());
-  bind('#result-menu', () => ui.showScreen('screen-menu'));
+  bind('#result-menu', () => { ui.showScreen('screen-menu'); updateResumeBtn(); });
   bind('#result-replay', () => { ui.showScreen('screen-replays'); renderReplays(); });
-  bind('#game-menu', () => { if (confirm('게임을 나가고 메뉴로 갈까요?')) { ctrl.leaveOnline(); ui.showScreen('screen-menu'); } });
+  bind('#game-menu', () => {
+    if (confirm('게임을 나가고 메뉴로 갈까요?')) {
+      ctrl.leaveOnline();
+      ui.showScreen('screen-menu');
+      updateResumeBtn();
+    }
+  });
 
   registerSW();
+}
+
+function updateResumeBtn() {
+  const btn = ui.$('#menu-resume');
+  if (!btn) return;
+  btn.style.display = sessionStorage.getItem('ff_session') ? '' : 'none';
+}
+
+async function resumeSession() {
+  const raw = sessionStorage.getItem('ff_session');
+  if (!raw) return;
+  let record;
+  try { record = JSON.parse(raw); } catch { ctrl.clearSession(); updateResumeBtn(); return; }
+
+  if (record.mode === 'local') {
+    ctrl.resumeLocalGame(record);
+  } else if (record.mode === 'online') {
+    if (!multiplayerEnabled) { ctrl.clearSession(); updateResumeBtn(); return; }
+    ui.toast('⌛ 재접속 중…');
+    await withNet(async (net) => {
+      await enterLobby(net, record.code, false);
+    });
+  }
 }
 
 function bind(sel, fn) { const el = ui.$(sel); if (el) el.addEventListener('click', fn); }
@@ -242,11 +276,20 @@ async function joinRoom() {
 
 async function enterLobby(net, code, isHost) {
   online = { code, isHost, unsub: null };
+  ui.showScreen('screen-online');
   online.unsub = await net.subscribe(code, (data) => {
     if (!online) return;
     if (data.status === 'playing') {
       leaveLobby();
       ctrl.startOnline(code, data);
+      return;
+    }
+    if (data.status === 'ended') {
+      leaveLobby();
+      ctrl.clearSession();
+      ui.toast('게임이 이미 종료됐어요');
+      ui.showScreen('screen-menu');
+      updateResumeBtn();
       return;
     }
     renderLobby(data, net);
@@ -256,19 +299,92 @@ async function enterLobby(net, code, isHost) {
 function renderLobby(data, net) {
   const lobby = ui.$('#lobby');
   if (!lobby) return;
-  const isHost = data.hostId === net.clientId();
+  const myUid = net.clientId();
+  const isHost = data.hostId === myUid;
+  const opts = data.opts || {};
+
+  const playersList = data.players.map((p) =>
+    `<li>${p.isAI ? '🤖' : '🧑'} ${escapeHtml(p.name)}${p.uid === data.hostId ? ' 👑' : ''}${isHost && p.isAI ? ` <button class="btn tiny ghost rmv-ai" data-uid="${p.uid}">✕</button>` : ''}</li>`
+  ).join('');
+
+  const hostControls = isHost ? `
+    ${data.players.length < 4 ? `<div class="lobby-ai-row">
+      <div class="seg" id="lobby-ai-diff">
+        <button data-v="easy">쉬움</button><button data-v="normal" class="active">보통</button><button data-v="hard">어려움</button>
+      </div>
+      <button class="btn tiny" id="lobby-ai-add">+ AI</button>
+    </div>` : ''}
+    <label class="field slider-field">
+      <span>동물당 카드 수: <b id="lv-pets">${opts.petsPerType || 8}</b>장</span>
+      <input type="range" id="ls-pets" min="6" max="12" value="${opts.petsPerType || 8}">
+    </label>
+    <label class="field slider-field">
+      <span>특수카드 수 (타입당): <b id="lv-spec">${opts.specialCount ?? 1}</b>장</span>
+      <input type="range" id="ls-spec" min="0" max="4" value="${opts.specialCount ?? 1}">
+    </label>
+    <button class="btn primary" id="ol-start" ${data.players.length < 2 ? 'disabled' : ''}>게임 시작 (${data.players.length}명)</button>
+  ` : `<p class="waiting">방장이 시작하기를 기다리는 중… 🐾</p>`;
+
   lobby.innerHTML = `
     <div class="online-card lobby">
       <h3>방 코드</h3><div class="room-code">${data.code}</div>
       <button class="btn tiny ghost" id="ol-copy">코드 복사</button>
       <h4>참가자 (${data.players.length}/4)</h4>
-      <ul class="lobby-players">${data.players.map((p) => `<li>🧑 ${escapeHtml(p.name)}${p.uid === data.hostId ? ' 👑' : ''}</li>`).join('')}</ul>
-      ${isHost ? `<button class="btn primary" id="ol-start" ${data.players.length < 2 ? 'disabled' : ''}>게임 시작 (${data.players.length}명)</button>`
-        : `<p class="waiting">방장이 시작하기를 기다리는 중… 🐾</p>`}
+      <ul class="lobby-players">${playersList}</ul>
+      ${hostControls}
     </div>`;
+
   ui.$('#ol-copy').onclick = () => { navigator.clipboard?.writeText(data.code); ui.toast('📋 코드 복사됨'); };
-  const start = ui.$('#ol-start');
-  if (start) start.onclick = () => net.startGame(data.code).catch((e) => ui.toast('⚠️ ' + e.message));
+
+  if (isHost) {
+    // AI 난이도 선택
+    let aiDiff = 'normal';
+    const diffSeg = ui.$('#lobby-ai-diff');
+    if (diffSeg) {
+      diffSeg.querySelectorAll('button').forEach((b) => {
+        b.onclick = () => { diffSeg.querySelectorAll('button').forEach((x) => x.classList.remove('active')); b.classList.add('active'); aiDiff = b.dataset.v; };
+      });
+    }
+
+    // AI 추가
+    const addBtn = ui.$('#lobby-ai-add');
+    if (addBtn) {
+      addBtn.onclick = () => {
+        const aiNames = ['몽이', '코코', '보리', '나비', '두부', '콩이'];
+        const aiCount = data.players.filter((p) => p.isAI).length;
+        net.addAIPlayer(data.code, aiNames[aiCount % aiNames.length], aiDiff).catch((e) => ui.toast('⚠️ ' + e.message));
+      };
+    }
+
+    // AI 제거
+    lobby.querySelectorAll('.rmv-ai').forEach((btn) => {
+      btn.onclick = () => net.removeAIPlayer(data.code, btn.dataset.uid).catch((e) => ui.toast('⚠️ ' + e.message));
+    });
+
+    // 카드 설정 슬라이더
+    const slPets = ui.$('#ls-pets');
+    if (slPets) slPets.addEventListener('change', () => {
+      ui.$('#lv-pets').textContent = slPets.value;
+      net.updateRoomOpts(data.code, { ...opts, petsPerType: +slPets.value }).catch(() => {});
+    });
+    const slSpec = ui.$('#ls-spec');
+    if (slSpec) slSpec.addEventListener('change', () => {
+      ui.$('#lv-spec').textContent = slSpec.value;
+      net.updateRoomOpts(data.code, { ...opts, specialCount: +slSpec.value }).catch(() => {});
+    });
+    // 드래그 중 레이블 실시간 업데이트
+    if (slPets) slPets.addEventListener('input', () => ui.$('#lv-pets').textContent = slPets.value);
+    if (slSpec) slSpec.addEventListener('input', () => ui.$('#lv-spec').textContent = slSpec.value);
+
+    // 게임 시작
+    const start = ui.$('#ol-start');
+    if (start) {
+      start.onclick = () => {
+        const currentOpts = { petsPerType: slPets ? +slPets.value : (opts.petsPerType || 8), specialCount: slSpec ? +slSpec.value : (opts.specialCount ?? 1) };
+        net.startGame(data.code, currentOpts).catch((e) => ui.toast('⚠️ ' + e.message));
+      };
+    }
+  }
 }
 
 function leaveLobby() {

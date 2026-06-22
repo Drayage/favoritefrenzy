@@ -83,8 +83,8 @@ export function createGame(configs, seed, opts = {}) {
 }
 
 // (seed, configs, log) 로부터 상태를 완전히 재구성한다. (리플레이/동기화용)
-export function reconstruct(configs, seed, log) {
-  const state = createGame(configs, seed);
+export function reconstruct(configs, seed, log, opts = {}) {
+  const state = createGame(configs, seed, opts);
   for (const action of log) applyAction(state, action);
   return state;
 }

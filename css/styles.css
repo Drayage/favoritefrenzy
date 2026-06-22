@@ -262,8 +262,12 @@ input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--pink-d); }
 .online-card .btn { width: 100%; }
 .room-code { font-size: 2rem; font-weight: 800; letter-spacing: 4px; color: #7a3b4f; text-align: center; background: var(--cream2); border-radius: var(--radius-sm); padding: 10px; margin-bottom: 8px; }
 .lobby-players { list-style: none; padding: 0; margin: 8px 0; }
-.lobby-players li { background: var(--cream2); border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 6px; font-weight: 700; }
+.lobby-players li { background: var(--cream2); border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 6px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; }
+.lobby-ai-row { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+.lobby-ai-row .seg { flex: 1; }
+.lobby-ai-row .btn { width: auto; flex-shrink: 0; }
 .waiting { text-align: center; color: var(--ink-soft); }
+.surrender-btn { margin-left: auto; opacity: .65; }
 
 /* ── 빈 존 비주얼 ────────────────────────────────────────── */
 /* 클래스명 zone-empty: 범용 .empty(리플레이 목록 placeholder, margin-top:40px·line-height:1.8)와
