@@ -111,6 +111,7 @@ input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--pink-d); }
   background: var(--white); border-radius: 16px; padding: 4px 2px;
   border: 2.5px solid var(--card-color);
   z-index: 1;
+  transition: opacity 0.25s ease, filter 0.25s ease;
 }
 .zone .z-art { position: relative; width: 70%; margin: 0 auto; }
 .zone svg.art { width: 100%; height: auto; display: block; }
@@ -238,7 +239,6 @@ input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--pink-d); }
 .zone.empty {
   opacity: 0.32;
   filter: grayscale(0.65);
-  z-index: 0;
 }
 .zone.empty .z-count { visibility: hidden; }
 
