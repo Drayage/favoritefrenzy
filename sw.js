@@ -1,7 +1,7 @@
 // sw.js — 서비스워커. 앱 셸을 캐시해 오프라인 플레이를 지원한다.
 // 멀티플레이용 Firebase SDK는 CDN(교차 출처)에서 받으므로 캐시하지 않으며 온라인에서만 동작한다.
 
-const CACHE = 'favorite-frenzy-v2';
+const CACHE = 'favorite-frenzy-v3';
 const ASSETS = [
   './',
   './index.html',
