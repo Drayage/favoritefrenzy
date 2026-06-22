@@ -146,11 +146,12 @@ input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--pink-d); }
 @keyframes pop { 0% { transform: translate(-50%,-50%) scale(1);} 40% { transform: translate(-50%,-50%) scale(1.28);} 100% { transform: translate(-50%,-50%) scale(1);} }
 .zone.explode { animation: shake .36s; }
 @keyframes shake { 0%,100% { transform: translate(-50%,-50%) rotate(0);} 25% { transform: translate(-52%,-50%) rotate(-6deg);} 75% { transform: translate(-48%,-50%) rotate(6deg);} }
-.zone.pushed { animation: pushaway .44s ease; }
+.zone.pushed  { animation: pushaway .46s ease; }
+.zone.pushing { opacity: 1 !important; filter: none !important; }
 @keyframes pushaway {
-  0%   { transform: translate(-50%,-50%) scale(1);    opacity: 1;    }
-  40%  { transform: translate(-50%,-50%) scale(0.86); opacity: 0.30; }
-  100% { transform: translate(-50%,-50%) scale(1);    opacity: 1;    }
+  0%   { opacity: 1;    }
+  40%  { opacity: 0.22; }
+  100% { opacity: 1;    }
 }
 .zone.sparkle { animation: sparkle .6s; }
 @keyframes sparkle { 0%,100% { filter: none;} 50% { filter: drop-shadow(0 0 10px gold) brightness(1.2);} }
@@ -312,21 +313,29 @@ input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--pink-d); }
 
 /* ── 시계방향 표시 & 고슴도치↔고양이 경계 벽 ──────────── */
 .dir-cw {
-  display: block;
-  font-size: 1.1rem;
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 6.5rem;
   color: var(--ink-soft);
+  opacity: 0.13;
+  pointer-events: none;
+  user-select: none;
   line-height: 1;
-  margin-top: 2px;
-  letter-spacing: -1px;
+  z-index: 0;
 }
+/* 고슴도치↔고양이 사이 수직선 — rotate(68deg)로 두 존 정중앙에서 수선 방향 */
 .zone-wall {
   position: absolute;
-  transform: translate(-50%, -50%);
-  font-size: 1.1rem;
+  width: 8%;
+  height: 3px;
+  background: repeating-linear-gradient(
+    90deg, var(--pink-d) 0, var(--pink-d) 5px, transparent 5px, transparent 10px
+  );
+  transform: translate(-50%, -50%) rotate(68deg);
+  border-radius: 2px;
   z-index: 3;
   pointer-events: none;
-  filter: drop-shadow(0 1px 3px rgba(0,0,0,.15));
-  line-height: 1;
 }
 
 /* 반응형 */

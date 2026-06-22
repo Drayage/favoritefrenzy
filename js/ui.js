@@ -62,13 +62,12 @@ export function renderZones(state, board) {
     wrap.appendChild(el);
   });
 
-  // 고슴도치↔고양이 경계 벽 마커 (hedgehog rank 1은 고양이만 밀어냄)
+  // 고슴도치↔고양이 경계 벽 — 두 존 사이 수직(수선) 방향으로 선 표시
   const wallEl = document.createElement('div');
   wallEl.className = 'zone-wall';
   wallEl.title = '고슴도치는 도도한 고양이를 직접 밀어낼 수 있어요';
-  wallEl.textContent = '🧱';
-  wallEl.style.left = '33%';
-  wallEl.style.top = '12%';
+  wallEl.style.left = '35%';
+  wallEl.style.top = '14%';
   wrap.appendChild(wallEl);
 }
 
@@ -193,6 +192,12 @@ function showSpecialEffect(emoji, line1, line2 = '', ms = 1000) {
 // ── 애니메이션 (이벤트 기반) ──────────────────────────────
 export async function animate(events, state, viewer) {
   if (!prefersAnim) return;
+  // push 대상 존을 즉시 불투명으로 고정 — renderAll이 이미 최종(빈) 상태를 렌더링했으므로
+  // place 애니메이션 중에도 대상 존이 반투명으로 보이지 않도록
+  events.filter((e) => e.type === 'push' && e.to).forEach((e) => {
+    const z = $(`.zone[data-pet="${e.to}"]`);
+    if (z) z.classList.add('pushing');
+  });
   for (let i = 0; i < events.length; i++) {
     const ev = events[i];
 
@@ -217,6 +222,9 @@ export async function animate(events, state, viewer) {
     } else if (ev.type === 'explode' && !ev.failed && events[i + 1]?.type === 'push') {
       // ── 폭발 + 스캔 + 밀어내기 묶음 처리 ──
       const pushEv = events[++i];
+      // 대상 존을 즉시 불투명으로 고정 (renderAll이 이미 빈 상태로 렌더링했으므로)
+      const targetZone = $(`.zone[data-pet="${pushEv.to}"]`);
+      if (targetZone) targetZone.classList.add('pushing');
       // 1. 폭발 존 흔들기
       const fromZ = $(`.zone[data-pet="${ev.pet}"]`);
       if (fromZ) { fromZ.classList.add('explode'); sound.sfxExplode(); await wait(300); fromZ.classList.remove('explode'); }
@@ -293,14 +301,18 @@ export async function animate(events, state, viewer) {
 async function _animatePush(ev, state) {
   const tz = $(`.zone[data-pet="${ev.to}"]`);
   if (!tz) return;
+  // renderAll이 push 후 상태(빈 존)를 이미 반영했으므로
+  // 애니메이션 중에는 강제로 불투명하게 유지
+  tz.classList.add('pushing');
   const gain = ev.defended ? 1 : (ev.cards ? ev.cards.length : 0) + (ev.badgeBonus ? 1 : 0);
   floatText(tz, ev.defended ? '🛏️ 방어!' : `💗 +${gain}`);
   heartBurst(tz);
   sound.sfxPush();
-  await wait(180); // 하트/텍스트 먼저 보이고 나서 존 페이드
+  await wait(180);
   tz.classList.add('pushed');
-  await wait(440);
+  await wait(460);
   tz.classList.remove('pushed');
+  tz.classList.remove('pushing');
 }
 
 function pop(el) { el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
