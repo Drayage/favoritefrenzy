@@ -124,7 +124,7 @@ export function petSVG(key) {
 
 // 특수카드 SVG (이모지 활용 + 파스텔 배경 원)
 const SPECIAL_BG = {
-  transform: '#f3e0ff', toy: '#ffe4cf', treat: '#ffe0e8', cushion: '#e0f0ff', badge: '#fff3c4',
+  transform: '#d8f5e0', toy: '#ffe4cf', treat: '#f0e0ff', cushion: '#fde8d0', badge: '#ffd9e8',
 };
 export function specialSVG(key) {
   const s = SPECIALS[key];

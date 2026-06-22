@@ -2,6 +2,7 @@
 import { PETS, PET_BY_KEY, PET_KEYS_DESC, SPECIALS, getCard, cardLabel } from './cards.js';
 import { petSVG, specialSVG, cardBackSVG } from './art.js';
 import { score } from './engine.js';
+import * as sound from './sound.js';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -46,12 +47,13 @@ export function renderZones(state, board) {
     const pet = PET_BY_KEY[key];
     const el = document.createElement('div');
     el.className = 'zone';
+    if (z.cards.length === 0) el.classList.add('empty');
     el.dataset.pet = key;
     el.style.left = `${50 + Math.cos(ang) * 41}%`;
     el.style.top = `${50 + Math.sin(ang) * 41}%`;
     el.style.setProperty('--card-color', pet.color);
-    const badge = state.badge && state.badge.pet === key ? '<span class="z-badge" title="최애 배지">🏅</span>' : '';
-    const cushion = z.cushionCardId != null ? '<span class="z-cushion" title="전용 방석">🛏️</span>' : '';
+    const badge = state.badge && state.badge.pet === key ? '<span class="z-badge" title="최애 배찌">🏅</span>' : '';
+    const cushion = z.cushionCardId != null ? '<span class="z-cushion" title="침대 아래">🛏️</span>' : '';
     el.innerHTML = `
       <div class="z-art">${petSVG(key)}${badge}${cushion}</div>
       <div class="z-rank">${pet.rank}</div>
@@ -127,6 +129,16 @@ export function modal(title, bodyHtml) {
   });
 }
 
+// 특수카드 사용 확인 모달
+export function specialInfoModal(s) {
+  return modal(
+    `${s.emoji} ${s.name}`,
+    `<p class="special-desc">${s.desc}</p>
+     <button class="btn primary" data-val="ok">사용하기</button>
+     <button class="btn ghost" data-val="">취소</button>`
+  );
+}
+
 // 존 선택 모달
 export function pickZone(state, title, { onlyNonEmpty = false, noCushion = false } = {}) {
   const items = PET_KEYS_DESC.filter((k) => {
@@ -145,7 +157,7 @@ export function pickPet(title) {
 
 export function pickPlayer(state, viewer, title) {
   const items = state.players.filter((p) => p.index !== viewer).map((p) =>
-    `<button class="pick wide" data-val="${p.index}">${p.isAI ? '🤖' : '🧑'} ${p.name} (손패 ${p.hand.length})</button>`).join('');
+    `<button class="pick wide" data-val="${p.index}">${p.isAI ? '🤖' : '🧑'} ${p.name} (손패 ${p.hand.length}장)</button>`).join('');
   return modal(title, `<div class="pick-grid">${items}</div><button class="btn ghost" data-val="">취소</button>`);
 }
 
@@ -155,40 +167,130 @@ export function pickCardFromHand(state, viewer, title) {
   return modal(title, `<div class="pick-grid">${items}</div><button class="btn ghost" data-val="">취소</button>`);
 }
 
-// ── 애니메이션 (이벤트 기반, 이미 갱신된 DOM 위에 효과) ──
+// ── 특수카드 이펙트 오버레이 ─────────────────────────────
+function showSpecialEffect(emoji, line1, line2 = '', ms = 1000) {
+  if (!prefersAnim) return Promise.resolve();
+  return new Promise((r) => {
+    const el = document.createElement('div');
+    el.className = 'special-effect-overlay';
+    el.innerHTML = `<span class="seo-emoji">${emoji}</span>
+      <span class="seo-text">${line1}</span>
+      ${line2 ? `<span class="seo-sub">${line2}</span>` : ''}`;
+    document.body.appendChild(el);
+    setTimeout(() => { el.remove(); r(); }, ms);
+  });
+}
+
+// ── 애니메이션 (이벤트 기반) ──────────────────────────────
 export async function animate(events, state, viewer) {
   if (!prefersAnim) return;
-  for (const ev of events) {
+  for (let i = 0; i < events.length; i++) {
+    const ev = events[i];
+
     if (ev.type === 'place') {
       const z = $(`.zone[data-pet="${ev.pet}"]`);
-      if (z) { pop(z); await wait(220); }
-    } else if (ev.type === 'explode') {
-      const z = $(`.zone[data-pet="${ev.pet}"]`);
-      if (z) { z.classList.add('explode'); await wait(360); z.classList.remove('explode'); }
-    } else if (ev.type === 'push') {
-      const z = $(`.zone[data-pet="${ev.to}"]`);
       if (z) {
-        z.classList.add('pushed');
-        const gain = ev.defended ? 1 : (ev.cards ? ev.cards.length : 0) + (ev.badgeBonus ? 1 : 0);
-        floatText(z, ev.defended ? '🛏️ 방어!' : `💗 +${gain}`);
-        heartBurst(z);
-        await wait(520);
-        z.classList.remove('pushed');
+        if (ev.player !== viewer) {
+          // 상대 카드 배치 강조
+          const name = state.players[ev.player]?.name || '';
+          z.classList.add('opp-place');
+          floatText(z, `${name} ▸ ${PET_BY_KEY[ev.pet].name}`);
+          sound.sfxPlace();
+          await wait(360);
+          z.classList.remove('opp-place');
+        } else {
+          pop(z);
+          sound.sfxPlace();
+          await wait(220);
+        }
       }
+
+    } else if (ev.type === 'explode' && !ev.failed && events[i + 1]?.type === 'push') {
+      // ── 폭발 + 스캔 + 밀어내기 묶음 처리 ──
+      const pushEv = events[++i];
+      // 1. 폭발 존 흔들기
+      const fromZ = $(`.zone[data-pet="${ev.pet}"]`);
+      if (fromZ) { fromZ.classList.add('explode'); sound.sfxExplode(); await wait(300); fromZ.classList.remove('explode'); }
+
+      // 2. 스캔 — 폭발 존 rank-1 부터 target rank 까지 순서대로 pulse
+      const fromRank = PET_BY_KEY[ev.pet].rank;
+      let scanKeys;
+      if (ev.pet === 'hedgehog') {
+        scanKeys = ['cat'];
+      } else {
+        scanKeys = PETS
+          .filter((p) => p.rank <= fromRank - 1 && p.rank >= PET_BY_KEY[pushEv.to].rank)
+          .sort((a, b) => b.rank - a.rank)
+          .map((p) => p.key);
+      }
+      for (const k of scanKeys) {
+        const sz = $(`.zone[data-pet="${k}"]`);
+        if (sz) {
+          const isTarget = k === pushEv.to;
+          sz.classList.add(isTarget ? 'scan-target' : 'scan-skip');
+          sound.sfxScan(fromRank - PET_BY_KEY[k].rank);
+          await wait(isTarget ? 180 : 100);
+          sz.classList.remove('scan-skip');
+          sz.classList.remove('scan-target');
+        }
+      }
+
+      // 3. 밀어내기 애니메이션
+      await _animatePush(pushEv, state);
+
+    } else if (ev.type === 'explode' && ev.failed) {
+      const z = $(`.zone[data-pet="${ev.pet}"]`);
+      if (z) { z.classList.add('explode'); sound.sfxExplode(); await wait(360); z.classList.remove('explode'); }
+      floatText(z || document.body, '❌ 실패');
+
+    } else if (ev.type === 'push') {
+      // standalone (shouldn't normally appear without preceding explode)
+      await _animatePush(ev, state);
+
     } else if (ev.type === 'toy') {
       const z = $(`.zone[data-pet="${ev.zone}"]`);
-      if (z) { floatText(z, '🧸 펑!'); await wait(300); }
+      if (z) { z.classList.add('explode'); await wait(150); z.classList.remove('explode'); }
+      sound.sfxExplode();
+      await showSpecialEffect('🧸', `${PET_BY_KEY[ev.zone].name} 존 전부 제거!`, `${ev.count}장 날아감`, 950);
+
     } else if (ev.type === 'cushion') {
       const z = $(`.zone[data-pet="${ev.zone}"]`);
-      if (z) { pop(z); floatText(z, '🛏️'); await wait(260); }
+      if (z) { pop(z); floatText(z, '🛏️'); }
+      sound.sfxCushion();
+      await wait(260);
+
     } else if (ev.type === 'badge') {
+      sound.sfxBadge();
+      await showSpecialEffect('🏅', `최애 배찌 → ${PET_BY_KEY[ev.pet].name}`, '밀려날 때마다 +1쓰담', 900);
       const z = $(`.zone[data-pet="${ev.pet}"]`);
       if (z) { z.classList.add('sparkle'); await wait(600); z.classList.remove('sparkle'); }
+
     } else if (ev.type === 'treat') {
-      toast('🍪 간식 거래!');
+      const me = state.players[ev.player];
+      const them = state.players[ev.target];
+      sound.sfxTreat();
+      await showSpecialEffect('🎪', `손패 전부 교환!`, `${me.name} ↔ ${them.name}`, 1300);
+      // 교환된 손패 강조
+      const hand = $('#hand');
+      if (hand) { hand.classList.add('hand-swap'); await wait(600); hand.classList.remove('hand-swap'); }
+
+    } else if (ev.type === 'deckEmpty') {
+      toast('🃏 카드 더미 소진! 손패가 떨어지면 게임 종료!', 2800);
       await wait(300);
     }
   }
+}
+
+async function _animatePush(ev, state) {
+  const tz = $(`.zone[data-pet="${ev.to}"]`);
+  if (!tz) return;
+  tz.classList.add('pushed');
+  const gain = ev.defended ? 1 : (ev.cards ? ev.cards.length : 0) + (ev.badgeBonus ? 1 : 0);
+  floatText(tz, ev.defended ? '🛏️ 방어!' : `💗 +${gain}`);
+  heartBurst(tz);
+  sound.sfxPush();
+  await wait(520);
+  tz.classList.remove('pushed');
 }
 
 function pop(el) { el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
@@ -198,7 +300,7 @@ function floatText(anchor, text) {
   const f = document.createElement('div');
   f.className = 'float-text';
   f.textContent = text;
-  const r = anchor.getBoundingClientRect();
+  const r = anchor.getBoundingClientRect?.() || { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 0 };
   f.style.left = `${r.left + r.width / 2}px`;
   f.style.top = `${r.top}px`;
   document.body.appendChild(f);

@@ -220,6 +220,92 @@ input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--pink-d); }
 .lobby-players li { background: var(--cream2); border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 6px; font-weight: 700; }
 .waiting { text-align: center; color: var(--ink-soft); }
 
+/* ── 빈 존 비주얼 ────────────────────────────────────────── */
+.zone.empty {
+  opacity: 0.32;
+  filter: grayscale(0.65);
+}
+.zone.empty .z-count { visibility: hidden; }
+
+/* ── 스캔 이펙트 ──────────────────────────────────────────── */
+@keyframes scanSkip {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 200, 50, 0); }
+  45%  { box-shadow: 0 0 0 7px rgba(255, 200, 50, 0.55); }
+  100% { box-shadow: 0 0 0 12px rgba(255, 200, 50, 0); }
+}
+@keyframes scanTarget {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 100, 80, 0); transform: translate(-50%,-50%) scale(1); }
+  40%  { box-shadow: 0 0 0 10px rgba(255, 100, 80, 0.7); transform: translate(-50%,-50%) scale(1.06); }
+  100% { box-shadow: 0 0 0 18px rgba(255, 100, 80, 0); transform: translate(-50%,-50%) scale(1); }
+}
+.zone.scan-skip   { animation: scanSkip  0.12s ease-out; }
+.zone.scan-target { animation: scanTarget 0.20s ease-out; }
+
+/* ── 상대 카드 배치 강조 ─────────────────────────────────── */
+@keyframes oppPlace {
+  0%   { box-shadow: 0 0 0 0 rgba(100, 180, 255, 0); transform: translate(-50%,-50%) scale(1); }
+  35%  { box-shadow: 0 0 0 9px rgba(100, 180, 255, 0.65); transform: translate(-50%,-50%) scale(1.07); }
+  100% { box-shadow: 0 0 0 0 rgba(100, 180, 255, 0); transform: translate(-50%,-50%) scale(1); }
+}
+.zone.opp-place { animation: oppPlace 0.38s ease-out; }
+
+/* ── 특수카드 이펙트 오버레이 ────────────────────────────── */
+@keyframes seoAnim {
+  0%   { opacity: 0; transform: scale(0.55); }
+  22%  { opacity: 1; transform: scale(1.18); }
+  68%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.88); }
+}
+.special-effect-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  pointer-events: none;
+  animation: seoAnim 0.95s ease forwards;
+}
+.seo-emoji { font-size: 3.8rem; line-height: 1; filter: drop-shadow(0 4px 12px rgba(0,0,0,.18)); }
+.seo-text  { font-size: 1.25rem; font-weight: 800; color: var(--ink); margin-top: 10px;
+             text-shadow: 0 2px 8px rgba(255,255,255,.95), 0 0 20px rgba(255,255,255,.7); }
+.seo-sub   { font-size: 0.9rem; color: var(--ink-soft); margin-top: 4px;
+             text-shadow: 0 1px 6px rgba(255,255,255,.9); }
+
+/* ── 손패 교환 애니메이션 ────────────────────────────────── */
+@keyframes handSwap {
+  0%   { transform: scale(1) rotate(0deg); }
+  20%  { transform: scale(0.88) rotate(-6deg); }
+  50%  { transform: scale(0.88) rotate(6deg); }
+  80%  { transform: scale(1.08) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+.hand.hand-swap { animation: handSwap 0.6s ease; }
+
+/* ── 카드 내기 전 예상 효과 ──────────────────────────────── */
+.action-preview {
+  width: 100%;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  background: var(--cream);
+  border-radius: 10px;
+  padding: 5px 12px;
+  margin-top: 2px;
+  box-shadow: var(--shadow-sm);
+  order: 10;
+}
+
+/* ── 특수카드 모달 설명 ──────────────────────────────────── */
+.special-desc {
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  margin: 0 0 14px;
+  background: var(--cream2);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+.modal-body .btn { width: 100%; margin-bottom: 8px; }
+.modal-body .btn:last-child { margin-bottom: 0; }
+
 /* 반응형 */
 @media (min-width: 540px) {
   .board { width: 460px; }

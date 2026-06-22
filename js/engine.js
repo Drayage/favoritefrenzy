@@ -8,6 +8,35 @@ import {
   HAND_SIZE, EXPLODE_AT,
 } from './cards.js';
 
+// ── 내기 전 예상 효과 미리보기 (상태 변경 없음) ──────────
+export function previewPlayPets(state, pet, cardIds) {
+  const petName = PET_BY_KEY[pet].name;
+  const afterCount = state.zones[pet].cards.length + cardIds.length;
+  if (afterCount < EXPLODE_AT)
+    return `${petName} ${afterCount}장 (${EXPLODE_AT - afterCount}장 더 있으면 폭발)`;
+
+  const rank = PET_BY_KEY[pet].rank;
+  let targetKey = null;
+  if (rank === 1) {
+    targetKey = state.zones['cat'].cards.length > 0 ? 'cat' : null;
+  } else {
+    for (let r = rank - 1; r >= 1; r--) {
+      const k = PETS.find((x) => x.rank === r).key;
+      if (state.zones[k].cards.length > 0) { targetKey = k; break; }
+    }
+  }
+  if (!targetKey) return `${petName} 폭발! 💥 밀어낼 상대가 없어요`;
+
+  const tz = state.zones[targetKey];
+  const targetName = PET_BY_KEY[targetKey].name;
+  if (tz.cushionCardId != null)
+    return `${petName} 폭발! 💥 → ${targetName} 🛏️ 방어 예상 (+1쓰담)`;
+
+  const gain = tz.cards.length + (state.badge && state.badge.pet === targetKey ? 1 : 0);
+  const badgeNote = state.badge && state.badge.pet === targetKey ? ' 🏅+1' : '';
+  return `${petName} 폭발! 💥 → ${targetName} 밀어내기 +${gain}쓰담${badgeNote}`;
+}
+
 // ── 상태 생성 ─────────────────────────────────────────────
 // configs: [{ name, isAI, difficulty }] (2~4명)
 export function createGame(configs, seed) {
@@ -108,14 +137,18 @@ export function applyAction(state, action) {
     events.push({ type: 'draw', player: p.index, count: drew.length });
   }
 
+  // 덱 첫 소진 알림 이벤트
+  if (state.drawPile.length === 0 && !state._deckEmpty) {
+    state._deckEmpty = true;
+    events.push({ type: 'deckEmpty' });
+  }
+
   // 로그 기록 (재현용 입력만 저장)
   state.log.push(action);
   state.turnsPlayed[state.current]++;
 
-  // 종료 판정: 드로우 더미 소진 + 모든 플레이어 동일 턴 수
-  const t = state.turnsPlayed;
-  const allEqual = t.every((x) => x === t[0]);
-  if (state.drawPile.length === 0 && allEqual) {
+  // 종료 판정: 드로우 더미 소진 + 어느 플레이어의 손패가 0장
+  if (state.drawPile.length === 0 && state.players.some((pl) => pl.hand.length === 0)) {
     endGame(state, events);
   } else {
     state.current = (state.current + 1) % state.players.length;
@@ -209,36 +242,25 @@ function doToy(state, p, action, events) {
   const zone = state.zones[action.zone];
   if (!zone) throw new Error('잘못된 존');
   if (zone.cards.length === 0) throw new Error('빈 존에는 장난감 사용 불가');
-  const removed = zone.cards.pop();
-  state.discardPile.push(removed, cardId); // 제거 카드 + 장난감 모두 폐기
-  events.push({ type: 'toy', zone: action.zone, removed, player: p.index });
+  const removed = zone.cards.slice(); // 존의 카드 전부 제거
+  zone.cards = [];
+  state.discardPile.push(...removed, cardId);
+  events.push({ type: 'toy', zone: action.zone, removed, count: removed.length, player: p.index });
 }
 
 function doTreat(state, p, action, events) {
   const cardId = takeFromHand(p, 'treat');
-  state.discardPile.push(cardId); // 간식 카드 사용 후 폐기
+  state.discardPile.push(cardId);
   const target = state.players[action.target];
   if (!target || target.index === p.index) throw new Error('잘못된 대상');
-  if (action.giveCardId == null || !p.hand.includes(action.giveCardId)) throw new Error('전달할 카드 선택 오류');
 
-  // 내 카드 1장 -> 상대
-  p.hand.splice(p.hand.indexOf(action.giveCardId), 1);
-  target.hand.push(action.giveCardId);
+  // 손패 전부 교환 (treat 카드 제거 후 남은 패)
+  const myHand = p.hand.slice();
+  const theirHand = target.hand.slice();
+  p.hand = theirHand;
+  target.hand = myHand;
 
-  // 상대 손패 1장 무작위 -> 나 (게임 rng 사용 → 재현 가능)
-  let takenId = null;
-  if (target.hand.length > 0) {
-    const rng = makeRng(0); rng.state = state.rngState;
-    // 방금 받은 카드를 다시 가져오지 않도록 후보에서 제외
-    const candidates = target.hand.filter((id) => id !== action.giveCardId);
-    const pool = candidates.length ? candidates : target.hand;
-    const idx = rng.int(pool.length);
-    takenId = pool[idx];
-    target.hand.splice(target.hand.indexOf(takenId), 1);
-    p.hand.push(takenId);
-    state.rngState = rng.state;
-  }
-  events.push({ type: 'treat', target: target.index, give: action.giveCardId, take: takenId, player: p.index });
+  events.push({ type: 'treat', target: target.index, player: p.index, myCount: theirHand.length, theirCount: myHand.length });
 }
 
 function doCushion(state, p, action, events) {
@@ -315,10 +337,8 @@ export function candidateActions(state) {
   }
   if (specials.includes('treat')) {
     for (const opp of state.players) {
-      if (opp.index !== p.index && opp.hand.length > 0 && p.hand.length > 1) {
-        // 줄 카드는 가장 가치 낮은 것(특수 제외 펫 1장) 기본 후보
-        const give = p.hand.find((id) => getCard(id).type === 'pet') ?? p.hand[0];
-        actions.push({ type: 'treat', target: opp.index, giveCardId: give });
+      if (opp.index !== p.index && opp.hand.length > 0) {
+        actions.push({ type: 'treat', target: opp.index });
       }
     }
   }

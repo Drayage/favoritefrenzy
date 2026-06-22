@@ -1,16 +1,18 @@
 // controller.js — 게임 진행 오케스트레이션 (로컬 AI/핫시트 + 온라인).
-import { createGame, reconstruct, applyAction, candidateActions, score } from './engine.js';
+import { createGame, reconstruct, applyAction, candidateActions, score, previewPlayPets } from './engine.js';
 import { chooseAction } from './ai.js';
-import { getCard, PET_BY_KEY } from './cards.js';
+import { getCard, PET_BY_KEY, SPECIALS } from './cards.js';
 import { randomSeed } from './rng.js';
 import * as ui from './ui.js';
 import { saveReplay } from './storage.js';
 import * as net from './firebase.js';
+import * as sound from './sound.js';
 
 let G = null; // 현재 세션
 
 // ── 로컬 게임 시작 ────────────────────────────────────────
 export function startLocal(configs) {
+  sound.initAudio();
   const seed = randomSeed();
   const state = createGame(configs, seed);
   G = {
@@ -85,19 +87,39 @@ function wireHand() {
   };
 }
 
-function onCardTap(id) {
+async function onCardTap(id) {
   const c = getCard(id);
-  if (c.type === 'special' && c.special !== 'transform') {
-    G.selected.clear();
-    return handleSpecial(c.special);
-  }
-  // 펫 또는 변신왕: 다중 선택(같은 펫만)
   const sel = G.selected;
+
+  if (c.type === 'special') {
+    if (c.special === 'transform') {
+      // 카멜레온: 선택 흐름 유지 + 토스트 안내
+      ui.toast(`🦎 카멜레온 — ${SPECIALS.transform.desc}`);
+      if (sel.has(id)) { sel.delete(id); }
+      else {
+        const selPet = currentSelectedPet();
+        if (selPet) sel.clear(); // 펫이 이미 선택된 경우 초기화 후 변신왕 추가
+        sel.add(id);
+      }
+      ui.renderHand(G.state, G.viewer, { selectable: true, selected: sel });
+      renderActionBar();
+    } else {
+      // 기타 특수카드: 효과 확인 모달 먼저 표시
+      sel.clear();
+      ui.renderHand(G.state, G.viewer, { selectable: true, selected: sel });
+      const go = await ui.specialInfoModal(SPECIALS[c.special]);
+      if (!go) { renderActionBar(); return; }
+      sound.sfxSpecial();
+      handleSpecial(c.special);
+    }
+    return;
+  }
+
+  // 펫 카드: 다중 선택 (같은 펫 + 카멜레온만)
   if (sel.has(id)) { sel.delete(id); }
   else {
-    // 선택 일관성: 이미 특정 펫이 선택되어 있으면 같은 펫/변신왕만 허용
     const selPet = currentSelectedPet();
-    if (c.type === 'pet' && selPet && selPet !== c.pet) { sel.clear(); }
+    if (selPet && c.type === 'pet' && selPet !== c.pet) sel.clear();
     sel.add(id);
   }
   ui.renderHand(G.state, G.viewer, { selectable: true, selected: sel });
@@ -120,12 +142,22 @@ function renderActionBar() {
   if (G.selected.size > 0) {
     const pet = currentSelectedPet();
     const label = pet ? PET_BY_KEY[pet].name : '펫 선택';
-    const btn = button(`🐾 ${label} ${G.selected.size}장 내기`, 'primary', confirmPetPlay);
-    bar.appendChild(btn);
-    bar.appendChild(button('선택 해제', 'ghost', () => { G.selected.clear(); ui.renderHand(state, G.viewer, { selectable: true, selected: G.selected }); renderActionBar(); }));
+    bar.appendChild(button(`🐾 ${label} ${G.selected.size}장 내기`, 'primary', confirmPetPlay));
+    bar.appendChild(button('선택 해제', 'ghost', () => {
+      G.selected.clear();
+      ui.renderHand(state, G.viewer, { selectable: true, selected: G.selected });
+      renderActionBar();
+    }));
+    // 예상 효과 미리보기
+    if (pet) {
+      const preview = previewPlayPets(state, pet, [...G.selected]);
+      const el = document.createElement('div');
+      el.className = 'action-preview';
+      el.textContent = preview;
+      bar.appendChild(el);
+    }
   } else {
     bar.appendChild(makeHint());
-    // 둘 수 있는 수가 없으면 패스
     if (candidateActions(state)[0]?.type === 'pass') {
       bar.appendChild(button('패스', 'ghost', () => submit({ type: 'pass' })));
     }
@@ -141,7 +173,7 @@ function makeHint() {
 
 async function confirmPetPlay() {
   let pet = currentSelectedPet();
-  if (!pet) { // 변신왕만 선택된 경우 대상 펫 지정
+  if (!pet) {
     pet = await ui.pickPet('어떤 반려동물로 변신할까요?');
     if (!pet) return;
   }
@@ -152,20 +184,18 @@ async function handleSpecial(special) {
   const { state } = G;
   let action = null;
   if (special === 'toy') {
-    const zone = await ui.pickZone(state, '🧸 어느 존의 카드를 뺄까요?', { onlyNonEmpty: true });
+    const zone = await ui.pickZone(state, '🧸 어느 존의 카드를 전부 뺄까요?', { onlyNonEmpty: true });
     if (zone) action = { type: 'toy', zone };
   } else if (special === 'cushion') {
     const zone = await ui.pickZone(state, '🛏️ 어느 존을 방어할까요?', { onlyNonEmpty: true, noCushion: true });
     if (zone) action = { type: 'cushion', zone };
   } else if (special === 'badge') {
-    const pet = await ui.pickPet('🏅 최애로 인증할 반려동물은?');
+    const pet = await ui.pickPet('🏅 최애 배찌로 인증할 반려동물은?');
     if (pet) action = { type: 'badge', pet };
   } else if (special === 'treat') {
-    const target = await ui.pickPlayer(state, G.viewer, '🍪 누구와 간식을 거래할까요?');
+    const target = await ui.pickPlayer(state, G.viewer, '🎪 누구와 손패를 교환할까요?');
     if (target == null || target === '') return;
-    const give = await ui.pickCardFromHand(state, G.viewer, '상대에게 줄 카드를 고르세요');
-    if (!give) return;
-    action = { type: 'treat', target: Number(target), giveCardId: Number(give) };
+    action = { type: 'treat', target: Number(target) };
   }
   if (action) submit(action);
 }
@@ -174,7 +204,6 @@ async function handleSpecial(special) {
 async function submit(action) {
   if (G.busy) return;
   if (G.mode === 'online') return submitOnline(action);
-  // 로컬
   G.busy = true;
   G.selected.clear();
   let events;
@@ -189,6 +218,7 @@ async function submit(action) {
 // ── 종료/결과 ────────────────────────────────────────────
 function finishGame() {
   const { state } = G;
+  sound.sfxEnd();
   ui.renderAll(state, G.viewer, { selectable: false });
   ui.$('#actions').innerHTML = '';
   if (!G.saved) {
@@ -230,6 +260,7 @@ export function rematch() {
 
 // ── 온라인 ───────────────────────────────────────────────
 export async function startOnline(code, roomData) {
+  sound.initAudio();
   const myUid = net.clientId();
   const configs = roomData.players.map((p) => ({ name: p.name, isAI: false, difficulty: 'normal', uid: p.uid }));
   const viewer = roomData.players.findIndex((p) => p.uid === myUid);
@@ -249,7 +280,6 @@ async function onSnapshot(data) {
   if (!G || G.mode !== 'online') return;
   const newLog = data.log || [];
   if (newLog.length > G.prevLogLen) {
-    // 새 액션들 애니메이션: 이전 길이까지 재구성 후 추가 적용
     const pre = reconstruct(G.configs, G.seed, newLog.slice(0, G.prevLogLen));
     G.state = pre;
     for (let i = G.prevLogLen; i < newLog.length; i++) {
@@ -292,6 +322,7 @@ function finishOnline(data) {
   };
   saveReplay(record);
   if (G.isHost) net.setStatus(G.code, 'ended').catch(() => {});
+  sound.sfxEnd();
   setTimeout(() => showResult(G.state), 700);
 }
 

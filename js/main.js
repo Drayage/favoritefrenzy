@@ -3,6 +3,7 @@ import * as ui from './ui.js';
 import * as ctrl from './controller.js';
 import * as replay from './replay.js';
 import * as store from './storage.js';
+import * as sound from './sound.js';
 import { logoSVG } from './art.js';
 import { PET_KEYS_DESC, PET_BY_KEY } from './cards.js';
 import { multiplayerEnabled } from './firebase-config.js';
@@ -15,6 +16,8 @@ document.addEventListener('DOMContentLoaded', init);
 
 function init() {
   ui.setAnimations(settings.animations !== false);
+  sound.setBGM(settings.bgm !== false);
+  sound.setSFX(settings.sfx !== false);
   // 로고
   const logo = ui.$('#logo'); if (logo) logo.innerHTML = logoSVG();
   buildHowTo();
@@ -160,6 +163,10 @@ function renderSettings() {
       <input id="set-name" class="text-in" maxlength="10" value="${escapeHtml(settings.playerName)}"></label>
     <label class="field row"><span>애니메이션</span>
       <input type="checkbox" id="set-anim" ${settings.animations !== false ? 'checked' : ''}></label>
+    <label class="field row"><span>배경음 (BGM)</span>
+      <input type="checkbox" id="set-bgm" ${settings.bgm !== false ? 'checked' : ''}></label>
+    <label class="field row"><span>효과음 (SFX)</span>
+      <input type="checkbox" id="set-sfx" ${settings.sfx !== false ? 'checked' : ''}></label>
     <label class="field"><span>기본 AI 난이도</span>
       <div class="seg" id="set-diff">
         <button data-v="easy">쉬움</button><button data-v="normal">보통</button><button data-v="hard">어려움</button></div></label>
@@ -168,8 +175,12 @@ function renderSettings() {
   ui.$('#set-save').onclick = () => {
     settings.playerName = (ui.$('#set-name').value || '집사').trim();
     settings.animations = ui.$('#set-anim').checked;
+    settings.bgm = ui.$('#set-bgm').checked;
+    settings.sfx = ui.$('#set-sfx').checked;
     store.saveSettings(settings);
     ui.setAnimations(settings.animations);
+    sound.setBGM(settings.bgm);
+    sound.setSFX(settings.sfx);
     ui.toast('💾 저장했어요');
     ui.showScreen('screen-menu');
   };
