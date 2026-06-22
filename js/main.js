@@ -26,6 +26,7 @@ function init() {
   bind('#menu-play', () => { ui.showScreen('screen-setup'); renderSetup(); });
   bind('#menu-replay', () => { ui.showScreen('screen-replays'); renderReplays(); });
   bind('#menu-settings', () => { ui.showScreen('screen-settings'); renderSettings(); });
+  bind('#menu-rules', () => { ui.showScreen('screen-rules'); renderRules(); });
   bind('#menu-online', openOnline);
   if (!multiplayerEnabled) { const b = ui.$('#menu-online'); if (b) b.style.display = 'none'; }
 
@@ -286,6 +287,62 @@ function buildHowTo() {
 }
 
 function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+// ── 게임 방법 (룰 화면) ──────────────────────────────────
+function renderRules() {
+  const box = ui.$('#rules-body');
+  const petRanks = PET_KEYS_DESC.map((k) => {
+    const p = PET_BY_KEY[k];
+    return `<span class="hp" style="--c:${p.color}"><b>${p.rank}</b> ${p.name}</span>`;
+  }).join('');
+  box.innerHTML = `
+    <div class="rule-section">
+      <h3 class="rule-h">🎯 목표</h3>
+      <p>턴마다 카드를 내어 <b>관심 폭발</b>을 일으키고, 상대 펫을 밀어내 💗<b>쓰담</b>을 가장 많이 모으세요!</p>
+    </div>
+
+    <div class="rule-section">
+      <h3 class="rule-h">🔄 한 턴의 흐름</h3>
+      <ol class="rule-ol">
+        <li>손패(5장)에서 <b>같은 펫 카드 1~3장</b> 또는 <b>특수카드 1장</b>을 선택해 내기</li>
+        <li>내기 후 덱에서 보충해 5장 유지 (덱 소진 시 보충 없음)</li>
+        <li>다음 플레이어로 턴 이동</li>
+      </ol>
+    </div>
+
+    <div class="rule-section">
+      <h3 class="rule-h">💥 관심 폭발</h3>
+      <p>같은 펫 카드가 보드의 해당 존에 <b>3장</b> 쌓이면 <b>관심 폭발</b>!</p>
+      <ul class="rule-ul">
+        <li>자신보다 <b>낮은 순위</b>의 펫 존 중 카드가 있는 가장 높은 곳을 <b>밀어냄</b></li>
+        <li>밀려난 존의 카드 수만큼 💗<b>쓰담 획득</b></li>
+        <li>밀어낼 상대가 없으면 폭발 실패 (점수 없음)</li>
+      </ul>
+    </div>
+
+    <div class="rule-section">
+      <h3 class="rule-h">🐾 펫 순위 (높을수록 강함)</h3>
+      <div class="how-pets rule-ranks">${petRanks}</div>
+      <p class="rule-note">😼 <b>고슴도치(1위)</b>는 예외적으로 최강 <b>고양이(8위)</b>를 밀어낼 수 있어요!</p>
+    </div>
+
+    <div class="rule-section">
+      <h3 class="rule-h">🃏 특수카드</h3>
+      <ul class="rule-special">
+        <li><span class="rs-emoji">🦎</span><span><b>카멜레온</b> — 원하는 펫으로 변신. 같은 펫 3장 합산에 사용 가능</span></li>
+        <li><span class="rs-emoji">🧸</span><span><b>장난감</b> — 선택한 존의 카드를 전부 제거</span></li>
+        <li><span class="rs-emoji">🎪</span><span><b>장난꾸러기</b> — 상대를 지정해 손패 전부 교환</span></li>
+        <li><span class="rs-emoji">🛏️</span><span><b>침대 아래</b> — 원하는 존에 배치. 다음 밀어내기 1회 방어 (+1쓰담)</span></li>
+        <li><span class="rs-emoji">🎀</span><span><b>최애리본</b> — 펫을 지정. 그 펫이 밀려날 때마다 +1쓰담 추가</span></li>
+      </ul>
+    </div>
+
+    <div class="rule-section">
+      <h3 class="rule-h">🏁 게임 종료</h3>
+      <p>덱이 소진된 후 어느 플레이어의 손패가 <b>0장</b>이 되면 게임 종료!</p>
+      <p>가장 많은 💗쓰담을 모은 플레이어가 오늘의 <b>쓰담왕</b> 🏆</p>
+    </div>`;
+}
 
 // ── 서비스워커 ───────────────────────────────────────────
 function registerSW() {

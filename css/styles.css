@@ -63,6 +63,18 @@ body {
 .hp b { background: rgba(255,255,255,.6); border-radius: 50%; padding: 0 5px; margin-right: 2px; }
 .howto-tip { line-height: 1.5; }
 
+/* 게임 방법 화면 */
+.rules-body { overflow-y: auto; }
+.rule-section { background: var(--white); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; box-shadow: var(--shadow-sm); }
+.rule-h { font-size: 1rem; margin: 0 0 8px; color: #7a3b4f; }
+.rule-section p { margin: 6px 0; font-size: .88rem; line-height: 1.6; color: var(--ink); }
+.rule-ol, .rule-ul { margin: 6px 0; padding-left: 1.4em; font-size: .88rem; line-height: 1.7; color: var(--ink); }
+.rule-ranks { margin: 8px 0 4px; }
+.rule-note { font-size: .82rem !important; color: var(--ink-soft) !important; }
+.rule-special { list-style: none; padding: 0; margin: 4px 0; display: flex; flex-direction: column; gap: 8px; }
+.rule-special li { display: flex; align-items: flex-start; gap: 10px; font-size: .88rem; line-height: 1.5; }
+.rs-emoji { font-size: 1.4rem; flex-shrink: 0; line-height: 1.2; }
+
 /* 상단 바 */
 .bar { display: flex; align-items: center; gap: 10px; padding: 14px 16px; }
 .bar h2 { margin: 0; font-size: 1.2rem; flex: 1; }
