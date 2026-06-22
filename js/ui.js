@@ -110,6 +110,11 @@ export function renderAll(state, viewer, handOpts) {
   renderZones(state, $('#board'));
   renderOpponents(state, viewer);
   renderHand(state, viewer, handOpts);
+  const pile = $('.draw-pile');
+  if (pile) {
+    pile.dataset.count = state.drawPile.length;
+    pile.setAttribute('aria-label', `드로우 더미 ${state.drawPile.length}장`);
+  }
 }
 
 // ── 작은 UI 헬퍼 ─────────────────────────────────────────

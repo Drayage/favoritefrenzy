@@ -95,7 +95,15 @@ input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--pink-d); }
 .board { position: relative; width: min(94vw, 460px); aspect-ratio: 1; margin: 4px auto; }
 .zones { position: absolute; inset: 0; }
 .center { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); text-align: center; }
-.draw-pile { width: 46px; height: 64px; border-radius: 10px; background: repeating-linear-gradient(135deg, #ffd9e6, #ffd9e6 6px, #ffeaf1 6px, #ffeaf1 12px); box-shadow: var(--shadow); margin: 0 auto; }
+.draw-pile { position: relative; width: 46px; height: 64px; border-radius: 10px; background: repeating-linear-gradient(135deg, #ffd9e6, #ffd9e6 6px, #ffeaf1 6px, #ffeaf1 12px); box-shadow: var(--shadow); margin: 0 auto; }
+.draw-pile::after {
+  content: attr(data-count);
+  position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+  background: rgba(90,75,79,.72); color: #fff;
+  font-size: .72rem; font-weight: 800; border-radius: 999px;
+  padding: 1px 7px; line-height: 1.5;
+  white-space: nowrap;
+}
 .center-label { font-size: .7rem; color: var(--ink-soft); }
 .zone {
   position: absolute; transform: translate(-50%, -50%);
