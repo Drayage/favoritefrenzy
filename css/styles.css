@@ -236,11 +236,13 @@ input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--pink-d); }
 .waiting { text-align: center; color: var(--ink-soft); }
 
 /* ── 빈 존 비주얼 ────────────────────────────────────────── */
-.zone.empty {
+/* 클래스명 zone-empty: 범용 .empty(리플레이 목록 placeholder, margin-top:40px·line-height:1.8)와
+   충돌해 빈 존이 40px 밀리고 z-name 높이가 달라지던 버그 방지 */
+.zone.zone-empty {
   opacity: 0.32;
   filter: grayscale(0.65);
 }
-.zone.empty .z-count { visibility: hidden; }
+.zone.zone-empty .z-count { visibility: hidden; }
 
 /* ── 스캔 이펙트 ──────────────────────────────────────────── */
 @keyframes scanSkip {

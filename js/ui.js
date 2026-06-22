@@ -47,7 +47,7 @@ export function renderZones(state, board) {
     const pet = PET_BY_KEY[key];
     const el = document.createElement('div');
     el.className = 'zone';
-    if (z.cards.length === 0) el.classList.add('empty');
+    if (z.cards.length === 0) el.classList.add('zone-empty');
     el.dataset.pet = key;
     el.style.left = `${50 + Math.cos(ang) * 41}%`;
     el.style.top = `${50 + Math.sin(ang) * 41}%`;
