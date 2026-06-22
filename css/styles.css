@@ -157,8 +157,8 @@ input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--pink-d); }
 @keyframes pop { 0% { transform: translate(-50%,-50%) scale(1);} 40% { transform: translate(-50%,-50%) scale(1.28);} 100% { transform: translate(-50%,-50%) scale(1);} }
 .zone.explode { animation: shake .36s; }
 @keyframes shake { 0%,100% { transform: translate(-50%,-50%) rotate(0);} 25% { transform: translate(-52%,-50%) rotate(-6deg);} 75% { transform: translate(-48%,-50%) rotate(6deg);} }
-.zone.explode .pet-eyes { transform-box: fill-box; transform-origin: center; animation: eye-squint 0.36s; }
-@keyframes eye-squint { 0%,100% { transform: scaleY(1); } 35%,65% { transform: scaleY(0.1); } }
+.zone.explode .pet-eye-wink { transform-box: fill-box; transform-origin: center; animation: eye-squint 0.36s; }
+@keyframes eye-squint { 0%,100% { transform: scaleY(1); } 35%,65% { transform: scaleY(0.12); } }
 .zone.pushed  { animation: pushaway .46s ease; }
 .zone.pushing { opacity: 1 !important; filter: none !important; }
 @keyframes pushaway {

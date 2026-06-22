@@ -20,10 +20,7 @@ const PETS_SVG = {
   cat: (c) => `
     ${triEar(28, 30, c)} ${triEar(72, 30, c)}
     ${face(c, `
-      <g class="pet-eyes">
-        <path d="M36 56 q5 4 10 0" stroke="${EYE}" stroke-width="3" fill="none" stroke-linecap="round"/>
-        <path d="M54 56 q5 4 10 0" stroke="${EYE}" stroke-width="3" fill="none" stroke-linecap="round"/>
-      </g>
+      ${eye(38, 56)} ${eyeWink(62, 56)}
       <path d="M47 66 q3 3 6 0" stroke="${EYE}" stroke-width="2.5" fill="none" stroke-linecap="round"/>
       <g stroke="${EYE}" stroke-width="1.6" stroke-linecap="round">
         <line x1="22" y1="62" x2="36" y2="63"/><line x1="22" y1="68" x2="36" y2="67"/>
@@ -33,7 +30,7 @@ const PETS_SVG = {
   dog: (c) => `
     ${floppyEar(22, 44, c)} ${floppyEar(78, 44, c)}
     ${face(c, `
-      ${eye(38, 56)} ${eye(62, 56)}
+      ${eye(38, 56)} ${eyeWink(62, 56)}
       <ellipse cx="50" cy="64" rx="5" ry="4" fill="${EYE}"/>
       <path d="M40 70 q10 10 20 0" stroke="${EYE}" stroke-width="3" fill="none" stroke-linecap="round"/>
       <path d="M50 72 q4 8 -2 12 q-4 -2 -4 -8 z" fill="${BLUSH}"/>`)}`,
@@ -41,7 +38,7 @@ const PETS_SVG = {
   rabbit: (c) => `
     ${longEar(40, c)} ${longEar(60, c)}
     ${face(c, `
-      ${eye(38, 58)} ${eye(62, 58)}
+      ${eye(38, 58)} ${eyeWink(62, 58)}
       <circle cx="30" cy="68" r="5" fill="${BLUSH}" opacity="0.8"/>
       <circle cx="70" cy="68" r="5" fill="${BLUSH}" opacity="0.8"/>
       <path d="M48 66 l2 3 l2 -3" stroke="${EYE}" stroke-width="2" fill="none"/>
@@ -52,7 +49,7 @@ const PETS_SVG = {
     ${face(c, `
       <ellipse cx="30" cy="70" rx="11" ry="9" fill="${c}"/>
       <ellipse cx="70" cy="70" rx="11" ry="9" fill="${c}"/>
-      ${eye(40, 56)} ${eye(60, 56)}
+      ${eye(40, 56)} ${eyeWink(60, 56)}
       <ellipse cx="50" cy="64" rx="4" ry="3" fill="${EYE}"/>
       <path d="M44 70 q6 5 12 0" stroke="${EYE}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
       <ellipse cx="50" cy="84" rx="6" ry="7" fill="#caa15e"/>`)}`,
@@ -60,14 +57,14 @@ const PETS_SVG = {
   parrot: (c) => `
     <path d="M50 18 q14 6 8 22 q-8 -6 -8 -22z" fill="${c}"/>
     ${face(c, `
-      ${eye(40, 56)} ${eye(60, 56)}
+      ${eye(40, 56)} ${eyeWink(60, 56)}
       <path d="M44 66 q6 0 12 0 l-3 9 q-3 3 -6 0 z" fill="#ff9f4d"/>
       <circle cx="80" cy="40" r="3" fill="${EYE}" opacity="0.5"/>
       <circle cx="88" cy="34" r="2.2" fill="${EYE}" opacity="0.4"/>`)}`,
   // 기니피그 — 겁쟁이(부들부들 큰 눈, 땀)
   guineapig: (c) => `
     ${face(c, `
-      ${eye(38, 56, 7)} ${eye(62, 56, 7)}
+      ${eye(38, 56, 7)} ${eyeWink(62, 56, 7)}
       <ellipse cx="50" cy="66" rx="3.5" ry="3" fill="${EYE}"/>
       <path d="M45 72 q5 -3 10 0" stroke="${EYE}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
       <path d="M80 50 q3 6 0 9 q-3 -3 0 -9z" fill="#9fd6ff"/>
@@ -77,8 +74,7 @@ const PETS_SVG = {
   ferret: (c) => `
     ${triEar(34, 34, c)} ${triEar(66, 34, c)}
     ${face(c, `
-      <g class="pet-eyes"><path d="M34 56 q4 -4 8 0" stroke="${EYE}" stroke-width="3" fill="none" stroke-linecap="round"/></g>
-      ${eye(62, 56)}
+      ${eye(38, 56)} ${eyeWink(62, 56)}
       <ellipse cx="50" cy="64" rx="3.5" ry="3" fill="${EYE}"/>
       <path d="M44 70 q6 6 12 0" stroke="${EYE}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
       <path d="M52 72 q3 4 0 7 q-3 -1 -3 -5z" fill="${BLUSH}"/>`)}`,
@@ -86,7 +82,7 @@ const PETS_SVG = {
   hedgehog: (c) => `
     ${spikes(c)}
     <ellipse cx="50" cy="64" rx="26" ry="24" fill="#f4e3cf"/>
-    ${eye(42, 62)} ${eye(58, 62)}
+    ${eye(42, 62)} ${eyeWink(58, 62)}
     <ellipse cx="50" cy="72" rx="5" ry="4" fill="${EYE}"/>
     <path d="M46 78 q4 -2 8 0" stroke="${EYE}" stroke-width="2.2" fill="none" stroke-linecap="round"/>
     <circle cx="34" cy="72" r="4" fill="${BLUSH}" opacity="0.7"/>
@@ -95,7 +91,10 @@ const PETS_SVG = {
 
 // 부품들
 function eye(x, y, r = 5.5) {
-  return `<g class="pet-eyes"><circle cx="${x}" cy="${y}" r="${r}" fill="${EYE}"/><circle cx="${x + r * 0.35}" cy="${y - r * 0.35}" r="${r * 0.35}" fill="#fff"/></g>`;
+  return `<g class="pet-eye"><circle cx="${x}" cy="${y}" r="${r}" fill="${EYE}"/><circle cx="${x + r * 0.35}" cy="${y - r * 0.35}" r="${r * 0.35}" fill="#fff"/></g>`;
+}
+function eyeWink(x, y, r = 5.5) {
+  return `<g class="pet-eye pet-eye-wink"><circle cx="${x}" cy="${y}" r="${r}" fill="${EYE}"/><circle cx="${x + r * 0.35}" cy="${y - r * 0.35}" r="${r * 0.35}" fill="#fff"/></g>`;
 }
 function triEar(x, y, c) {
   return `<path d="M${x - 12} ${y + 14} L${x} ${y - 8} L${x + 12} ${y + 14} Z" fill="${c}"/>`;
