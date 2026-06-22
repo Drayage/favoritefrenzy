@@ -192,11 +192,17 @@ function showSpecialEffect(emoji, line1, line2 = '', ms = 1000) {
 // ── 애니메이션 (이벤트 기반) ──────────────────────────────
 export async function animate(events, state, viewer) {
   if (!prefersAnim) return;
-  // push 대상 존을 즉시 불투명으로 고정 — renderAll이 이미 최종(빈) 상태를 렌더링했으므로
-  // place 애니메이션 중에도 대상 존이 반투명으로 보이지 않도록
-  events.filter((e) => e.type === 'push' && e.to).forEach((e) => {
-    const z = $(`.zone[data-pet="${e.to}"]`);
-    if (z) z.classList.add('pushing');
+  // push 대상 존 + 폭발 존을 즉시 불투명으로 고정 — renderAll이 이미 최종(빈) 상태를 렌더링했으므로
+  // place/explode 애니메이션 중에도 해당 존이 반투명으로 보이지 않도록
+  events.forEach((e) => {
+    if (e.type === 'push' && e.to) {
+      const z = $(`.zone[data-pet="${e.to}"]`);
+      if (z) z.classList.add('pushing');
+    }
+    if (e.type === 'explode' && !e.failed) {
+      const z = $(`.zone[data-pet="${e.pet}"]`);
+      if (z) z.classList.add('pushing');
+    }
   });
   for (let i = 0; i < events.length; i++) {
     const ev = events[i];
@@ -254,6 +260,7 @@ export async function animate(events, state, viewer) {
 
       // 3. 밀어내기 애니메이션
       await _animatePush(pushEv, state);
+      if (fromZ) fromZ.classList.remove('pushing');
 
     } else if (ev.type === 'explode' && ev.failed) {
       const z = $(`.zone[data-pet="${ev.pet}"]`);
