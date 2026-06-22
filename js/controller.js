@@ -184,16 +184,16 @@ async function handleSpecial(special) {
   const { state } = G;
   let action = null;
   if (special === 'toy') {
-    const zone = await ui.pickZone(state, '🎣 어느 존의 카드를 전부 뺄까요?', { onlyNonEmpty: true });
+    const zone = await ui.pickZone(state, '🧸 어느 존의 카드를 전부 뺄까요?', { onlyNonEmpty: true });
     if (zone) action = { type: 'toy', zone };
   } else if (special === 'cushion') {
-    const zone = await ui.pickZone(state, '🛡️ 어느 존을 방어할까요?', { onlyNonEmpty: true, noCushion: true });
+    const zone = await ui.pickZone(state, '🛏️ 어느 존을 방어할까요?', { onlyNonEmpty: true, noCushion: true });
     if (zone) action = { type: 'cushion', zone };
   } else if (special === 'badge') {
-    const pet = await ui.pickPet('🎀 최애 배찌로 인증할 반려동물은?');
+    const pet = await ui.pickPet('🏅 최애 배찌로 인증할 반려동물은?');
     if (pet) action = { type: 'badge', pet };
   } else if (special === 'treat') {
-    const target = await ui.pickPlayer(state, G.viewer, '🎁 누구와 손패를 교환할까요?');
+    const target = await ui.pickPlayer(state, G.viewer, '🎪 누구와 손패를 교환할까요?');
     if (target == null || target === '') return;
     action = { type: 'treat', target: Number(target) };
   }

@@ -30,10 +30,10 @@ export function previewPlayPets(state, pet, cardIds) {
   const tz = state.zones[targetKey];
   const targetName = PET_BY_KEY[targetKey].name;
   if (tz.cushionCardId != null)
-    return `${petName} 폭발! 💥 → ${targetName} 🛡️ 방어 예상 (+1쓰담)`;
+    return `${petName} 폭발! 💥 → ${targetName} 🛏️ 방어 예상 (+1쓰담)`;
 
   const gain = tz.cards.length + (state.badge && state.badge.pet === targetKey ? 1 : 0);
-  const badgeNote = state.badge && state.badge.pet === targetKey ? ' 🎀+1' : '';
+  const badgeNote = state.badge && state.badge.pet === targetKey ? ' 🏅+1' : '';
   return `${petName} 폭발! 💥 → ${targetName} 밀어내기 +${gain}쓰담${badgeNote}`;
 }
 

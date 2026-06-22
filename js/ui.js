@@ -52,8 +52,8 @@ export function renderZones(state, board) {
     el.style.left = `${50 + Math.cos(ang) * 41}%`;
     el.style.top = `${50 + Math.sin(ang) * 41}%`;
     el.style.setProperty('--card-color', pet.color);
-    const badge = state.badge && state.badge.pet === key ? '<span class="z-badge" title="응원 리본">🎀</span>' : '';
-    const cushion = z.cushionCardId != null ? '<span class="z-cushion" title="방패">🛡️</span>' : '';
+    const badge = state.badge && state.badge.pet === key ? '<span class="z-badge" title="최애 배찌">🏅</span>' : '';
+    const cushion = z.cushionCardId != null ? '<span class="z-cushion" title="침대 아래">🛏️</span>' : '';
     el.innerHTML = `
       <div class="z-art">${petSVG(key)}${badge}${cushion}</div>
       <div class="z-rank">${pet.rank}</div>
@@ -260,17 +260,17 @@ export async function animate(events, state, viewer) {
       const z = $(`.zone[data-pet="${ev.zone}"]`);
       if (z) { z.classList.add('explode'); await wait(150); z.classList.remove('explode'); }
       sound.sfxExplode();
-      await showSpecialEffect('🎣', `${PET_BY_KEY[ev.zone].name} 존 전부 제거!`, `${ev.count}장 날아감`, 950);
+      await showSpecialEffect('🧸', `${PET_BY_KEY[ev.zone].name} 존 전부 제거!`, `${ev.count}장 날아감`, 950);
 
     } else if (ev.type === 'cushion') {
       const z = $(`.zone[data-pet="${ev.zone}"]`);
-      if (z) { pop(z); floatText(z, '🛡️'); }
+      if (z) { pop(z); floatText(z, '🛏️'); }
       sound.sfxCushion();
-      await showSpecialEffect('🛡️', `${PET_BY_KEY[ev.zone].name} 존 방어!`, '다음 밀어내기 1회 방어', 900);
+      await showSpecialEffect('🛏️', `${PET_BY_KEY[ev.zone].name} 존 방어!`, '다음 밀어내기 1회 방어', 900);
 
     } else if (ev.type === 'badge') {
       sound.sfxBadge();
-      await showSpecialEffect('🎀', `최애 배찌 → ${PET_BY_KEY[ev.pet].name}`, '밀려날 때마다 +1쓰담', 900);
+      await showSpecialEffect('🏅', `최애 배찌 → ${PET_BY_KEY[ev.pet].name}`, '밀려날 때마다 +1쓰담', 900);
       const z = $(`.zone[data-pet="${ev.pet}"]`);
       if (z) { z.classList.add('sparkle'); await wait(600); z.classList.remove('sparkle'); }
 
@@ -278,7 +278,7 @@ export async function animate(events, state, viewer) {
       const me = state.players[ev.player];
       const them = state.players[ev.target];
       sound.sfxTreat();
-      await showSpecialEffect('🎁', `선물 상자! 손패 전부 교환!`, `${me.name} ↔ ${them.name}`, 1300);
+      await showSpecialEffect('🎪', `손패 전부 교환!`, `${me.name} ↔ ${them.name}`, 1300);
       // 교환된 손패 강조
       const hand = $('#hand');
       if (hand) { hand.classList.add('hand-swap'); await wait(600); hand.classList.remove('hand-swap'); }
@@ -294,7 +294,7 @@ async function _animatePush(ev, state) {
   const tz = $(`.zone[data-pet="${ev.to}"]`);
   if (!tz) return;
   const gain = ev.defended ? 1 : (ev.cards ? ev.cards.length : 0) + (ev.badgeBonus ? 1 : 0);
-  floatText(tz, ev.defended ? '🛡️ 방어!' : `💗 +${gain}`);
+  floatText(tz, ev.defended ? '🛏️ 방어!' : `💗 +${gain}`);
   heartBurst(tz);
   sound.sfxPush();
   await wait(180); // 하트/텍스트 먼저 보이고 나서 존 페이드
