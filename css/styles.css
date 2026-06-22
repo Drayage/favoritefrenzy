@@ -238,6 +238,7 @@ input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--pink-d); }
 .zone.empty {
   opacity: 0.32;
   filter: grayscale(0.65);
+  z-index: 0;
 }
 .zone.empty .z-count { visibility: hidden; }
 
