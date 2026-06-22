@@ -1,0 +1,9 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="최애 쟁탈전">
+  <rect width="64" height="64" rx="16" fill="#fff3e1"/>
+  <path d="M22 16 L27 22 L32 14 L37 22 L42 16 L40 28 L24 28 Z" fill="#ffd166"/>
+  <g fill="#ff7da6">
+    <ellipse cx="32" cy="44" rx="13" ry="11"/>
+    <circle cx="18" cy="36" r="5.5"/><circle cx="26" cy="30" r="5.5"/>
+    <circle cx="38" cy="30" r="5.5"/><circle cx="46" cy="36" r="5.5"/>
+  </g>
+</svg>

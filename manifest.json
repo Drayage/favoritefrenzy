@@ -1,0 +1,20 @@
+{
+  "name": "최애 쟁탈전 · Favorite Frenzy",
+  "short_name": "최애쟁탈전",
+  "description": "귀여운 반려동물 전략 카드게임 — 오늘의 쓰담왕은 누구?",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff6ea",
+  "theme_color": "#fff3e6",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon-maskable.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "maskable" },
+    { "src": "icons/icon-maskable.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#fff3e6">
+  <meta name="description" content="귀여운 반려동물 전략 카드게임 — 최애 쟁탈전">
+  <title>최애 쟁탈전 · Favorite Frenzy</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.svg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="최애 쟁탈전">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- 메인 메뉴 -->
+  <section id="screen-menu" class="screen active">
+    <div class="menu-wrap">
+      <div id="logo" class="logo"></div>
+      <h1 class="title">최애 쟁탈전</h1>
+      <p class="subtitle">오늘의 쓰담왕은 누구? 🐾</p>
+      <div class="menu-btns">
+        <button id="menu-play" class="btn primary big">🎮 플레이</button>
+        <button id="menu-online" class="btn big">🌐 온라인 대전</button>
+        <button id="menu-replay" class="btn big">🎬 리플레이</button>
+        <button id="menu-settings" class="btn big">⚙️ 설정</button>
+      </div>
+      <div class="howto">
+        <p>관심 순위 (높을수록 강함)</p>
+        <div id="how-pets" class="how-pets"></div>
+        <p class="howto-tip">같은 펫을 3장 모으면 <b>관심 폭발</b>! 아래 순위 펫을 밀어내 쓰담을 획득해요.<br>단, <b>고슴도치</b>는 도도한 <b>고양이</b>를 밀어낼 수 있어요 😼</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 플레이 설정 -->
+  <section id="screen-setup" class="screen">
+    <header class="bar"><button class="btn icon" data-back>←</button><h2>게임 설정</h2></header>
+    <div id="setup-body" class="pad"></div>
+  </section>
+
+  <!-- 온라인 -->
+  <section id="screen-online" class="screen">
+    <header class="bar"><button class="btn icon" data-back="leaveOnline">←</button><h2>온라인 대전</h2></header>
+    <div id="online-body" class="pad"></div>
+  </section>
+
+  <!-- 게임 -->
+  <section id="screen-game" class="screen">
+    <header class="game-top">
+      <button id="game-menu" class="btn icon">≡</button>
+      <div id="opponents" class="opponents"></div>
+      <div id="turn-indicator" class="turn-indicator"></div>
+    </header>
+    <div id="board" class="board">
+      <div id="zones" class="zones"></div>
+      <div class="center"><div class="draw-pile"></div><span class="center-label">드로우</span></div>
+    </div>
+    <footer class="game-bottom">
+      <div id="my-info" class="my-info"></div>
+      <div id="hand" class="hand"></div>
+      <div id="actions" class="actions"></div>
+    </footer>
+  </section>
+
+  <!-- 결과 -->
+  <section id="screen-result" class="screen">
+    <div class="result-wrap">
+      <div id="result-body"></div>
+      <div class="result-btns">
+        <button id="result-rematch" class="btn primary">🔁 다시하기</button>
+        <button id="result-replay" class="btn">🎬 리플레이</button>
+        <button id="result-menu" class="btn ghost">🏠 메뉴</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 리플레이 목록 -->
+  <section id="screen-replays" class="screen">
+    <header class="bar"><button class="btn icon" data-back>←</button><h2>리플레이</h2>
+      <button id="replay-import" class="btn tiny">📥 불러오기</button>
+      <input id="replay-file" type="file" accept="application/json" hidden></header>
+    <div id="replays-body" class="pad list"></div>
+  </section>
+
+  <!-- 리플레이 재생 -->
+  <section id="screen-replay" class="screen">
+    <header class="bar"><button class="btn icon" data-back="replay">←</button><h2>리플레이 재생</h2></header>
+    <div id="rp-players" class="rp-players"></div>
+    <div id="rp-board" class="board replay-board"><div id="rp-zones" class="zones"></div>
+      <div class="center"><span class="center-label">🎬</span></div></div>
+    <div id="rp-desc" class="rp-desc"></div>
+    <div class="rp-bar"><div id="rp-progress" class="rp-progress"></div></div>
+    <div class="rp-controls">
+      <button id="rp-first" class="btn icon">⏮</button>
+      <button id="rp-prev" class="btn icon">◀</button>
+      <button id="rp-play" class="btn icon primary">▶</button>
+      <button id="rp-next" class="btn icon">▶▶</button>
+      <button id="rp-last" class="btn icon">⏭</button>
+      <span id="rp-step" class="rp-step">0 / 0</span>
+      <span class="rp-speeds">
+        <button class="rp-speed" data-speed="1">x1</button>
+        <button class="rp-speed" data-speed="2">x2</button>
+        <button class="rp-speed" data-speed="4">x4</button>
+      </span>
+    </div>
+  </section>
+
+  <!-- 설정 -->
+  <section id="screen-settings" class="screen">
+    <header class="bar"><button class="btn icon" data-back>←</button><h2>설정</h2></header>
+    <div id="settings-body" class="pad"></div>
+  </section>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
