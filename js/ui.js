@@ -71,6 +71,11 @@ export function renderZones(state, board) {
   wrap.appendChild(wallEl);
 }
 
+function teamBadge(team) {
+  if (team === undefined) return '';
+  return `<span class="team-badge team-${team === 0 ? 'a' : 'b'}">${team === 0 ? 'A' : 'B'}</span>`;
+}
+
 // 상대 패널
 export function renderOpponents(state, viewer) {
   const box = $('#opponents');
@@ -79,7 +84,7 @@ export function renderOpponents(state, viewer) {
     if (p.index === viewer) return;
     const el = document.createElement('div');
     el.className = 'opp' + (state.current === p.index ? ' turn' : '');
-    el.innerHTML = `<div class="opp-name">${p.isAI ? '🤖 ' : '🧑 '}${p.name}</div>
+    el.innerHTML = `<div class="opp-name">${teamBadge(p.team)}${p.isAI ? '🤖 ' : '🧑 '}${p.name}</div>
       <div class="opp-stats"><span>🂠 ${p.hand.length}</span><span>💗 ${score(state, p.index)}</span></div>`;
     box.appendChild(el);
   });
@@ -92,7 +97,7 @@ export function renderOpponents(state, viewer) {
 // 내 정보 + 손패
 export function renderHand(state, viewer, { selectable = false, selected = new Set() } = {}) {
   const me = state.players[viewer];
-  $('#my-info').innerHTML = `<span class="me-name">🧑 ${me.name}</span>
+  $('#my-info').innerHTML = `<span class="me-name">${teamBadge(me.team)}🧑 ${me.name}</span>
     <span class="me-score">💗 ${score(state, viewer)} 쓰담</span>
     <span class="me-draw">남은 더미 ${state.drawPile.length}장</span>`;
   const hand = $('#hand');

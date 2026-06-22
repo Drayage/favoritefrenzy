@@ -51,6 +51,7 @@ export function createGame(configs, seed, opts = {}) {
     name: c.name,
     isAI: !!c.isAI,
     difficulty: c.difficulty || 'normal',
+    team: c.team !== undefined ? c.team : undefined,
     hand: [],
     scorePile: [],
     bonus: 0, // 최애 배지 등 카드 없는 추가 점수
@@ -286,13 +287,23 @@ function doBadge(state, p, action, events) {
 
 function endGame(state, events) {
   state.phase = 'ended';
-  let best = -1; let winners = [];
-  for (let i = 0; i < state.players.length; i++) {
-    const s = score(state, i);
-    if (s > best) { best = s; winners = [i]; }
-    else if (s === best) winners.push(i);
+  const hasTeams = state.players.some((p) => p.team !== undefined);
+  if (hasTeams) {
+    const teamScores = {};
+    state.players.forEach((p, i) => { teamScores[p.team] = (teamScores[p.team] || 0) + score(state, i); });
+    const best = Math.max(...Object.values(teamScores));
+    const winTeams = new Set(Object.entries(teamScores).filter(([, s]) => s === best).map(([t]) => +t));
+    const winners = state.players.filter((p) => winTeams.has(p.team)).map((p) => p.index);
+    state.winner = winners.length === 1 ? winners[0] : winners;
+  } else {
+    let best = -1; let winners = [];
+    for (let i = 0; i < state.players.length; i++) {
+      const s = score(state, i);
+      if (s > best) { best = s; winners = [i]; }
+      else if (s === best) winners.push(i);
+    }
+    state.winner = winners.length === 1 ? winners[0] : winners;
   }
-  state.winner = winners.length === 1 ? winners[0] : winners;
   events.push({ type: 'end', winner: state.winner, scores: state.players.map((_, i) => score(state, i)) });
 }
 

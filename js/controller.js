@@ -265,11 +265,21 @@ export async function surrender() {
   clearSession();
   if (G.mode === 'local') {
     const { state } = G;
-    const scores = state.players.map((_, i) => score(state, i));
-    const best = Math.max(...scores);
-    const winners = scores.reduce((acc, s, i) => { if (s === best) acc.push(i); return acc; }, []);
+    const hasTeams = state.players.some((p) => p.team !== undefined);
+    if (hasTeams) {
+      const teamScores = {};
+      state.players.forEach((p, i) => { teamScores[p.team] = (teamScores[p.team] || 0) + score(state, i); });
+      const best = Math.max(...Object.values(teamScores));
+      const winTeams = new Set(Object.entries(teamScores).filter(([, s]) => s === best).map(([t]) => +t));
+      const winners = state.players.filter((p) => winTeams.has(p.team)).map((p) => p.index);
+      state.winner = winners.length === 1 ? winners[0] : winners;
+    } else {
+      const scores = state.players.map((_, i) => score(state, i));
+      const best = Math.max(...scores);
+      const winners = scores.reduce((acc, s, i) => { if (s === best) acc.push(i); return acc; }, []);
+      state.winner = winners.length === 1 ? winners[0] : winners;
+    }
     state.phase = 'ended';
-    state.winner = winners.length === 1 ? winners[0] : winners;
     G.busy = false;
     finishGame();
   } else {
@@ -309,17 +319,41 @@ async function finishGame() {
 
 function showResult(state) {
   const winners = Array.isArray(state.winner) ? state.winner : [state.winner];
-  const rows = state.players
-    .map((p, i) => ({ p, s: score(state, i), win: winners.includes(i) }))
-    .sort((a, b) => b.s - a.s)
-    .map((r, idx) => `<div class="result-row ${r.win ? 'win' : ''}">
-      <span class="medal">${['🥇', '🥈', '🥉', '🐾'][idx] || '🐾'}</span>
-      <span class="r-name">${r.p.isAI ? '🤖' : '🧑'} ${r.p.name}</span>
-      <span class="r-score">${r.s} 쓰담</span></div>`).join('');
-  const title = winners.length > 1 ? '공동 우승! 🎉' : `${state.players[winners[0]].name} 우승! 🎉`;
+  const hasTeams = state.players.some((p) => p.team !== undefined);
+
+  let title, rows, extra = '';
+
+  if (hasTeams) {
+    const teamScores = { 0: 0, 1: 0 };
+    state.players.forEach((p, i) => { teamScores[p.team] = (teamScores[p.team] || 0) + score(state, i); });
+    const winTeam = state.players.find((p) => winners.includes(p.index))?.team ?? 0;
+    title = `팀${winTeam === 0 ? 'A' : 'B'} 우승! 🎉`;
+    extra = `<div class="team-scores">
+      <span class="team-badge team-a">A</span> ${teamScores[0]}쓰담
+      <span class="team-sep">vs</span>
+      <span class="team-badge team-b">B</span> ${teamScores[1]}쓰담
+    </div>`;
+    rows = state.players
+      .map((p, i) => ({ p, s: score(state, i), win: winners.includes(i) }))
+      .sort((a, b) => a.p.team - b.p.team || b.s - a.s)
+      .map((r) => `<div class="result-row ${r.win ? 'win' : ''}">
+        <span class="team-badge team-${r.p.team === 0 ? 'a' : 'b'}">${r.p.team === 0 ? 'A' : 'B'}</span>
+        <span class="r-name">${r.p.isAI ? '🤖' : '🧑'} ${r.p.name}</span>
+        <span class="r-score">${r.s} 쓰담</span></div>`).join('');
+  } else {
+    rows = state.players
+      .map((p, i) => ({ p, s: score(state, i), win: winners.includes(i) }))
+      .sort((a, b) => b.s - a.s)
+      .map((r, idx) => `<div class="result-row ${r.win ? 'win' : ''}">
+        <span class="medal">${['🥇', '🥈', '🥉', '🐾'][idx] || '🐾'}</span>
+        <span class="r-name">${r.p.isAI ? '🤖' : '🧑'} ${r.p.name}</span>
+        <span class="r-score">${r.s} 쓰담</span></div>`).join('');
+    title = winners.length > 1 ? '공동 우승! 🎉' : `${state.players[winners[0]].name} 우승! 🎉`;
+  }
+
   ui.$('#result-body').innerHTML = `<h2 class="win-title">${title}</h2>
     <p class="win-sub">오늘의 쓰담왕이 결정됐어요</p>
-    <div class="result-list">${rows}</div>`;
+    ${extra}<div class="result-list">${rows}</div>`;
   ui.showScreen('screen-result');
   setTimeout(() => sound.sfxFanfare(), 350);
 }

@@ -83,11 +83,12 @@ async function resumeSession() {
 function bind(sel, fn) { const el = ui.$(sel); if (el) el.addEventListener('click', fn); }
 
 // ── 플레이 설정 ──────────────────────────────────────────
-let setup = { total: 2, ai: 1, difficulty: settings.difficulty || 'normal', petsPerType: 8, specialCount: 1 };
+let setup = { total: 2, ai: 1, difficulty: settings.difficulty || 'normal', petsPerType: 8, specialCount: 1, teamMode: false };
 function renderSetup() {
   setup.difficulty = settings.difficulty || 'normal';
   setup.petsPerType = 8;
   setup.specialCount = 1;
+  setup.teamMode = false;
   const box = ui.$('#setup-body');
   box.innerHTML = `
     <label class="field"><span>플레이 인원</span>
@@ -96,6 +97,10 @@ function renderSetup() {
     <label class="field"><span>AI 난이도</span>
       <div class="seg" id="seg-diff">
         <button data-v="easy">쉬움</button><button data-v="normal">보통</button><button data-v="hard">어려움</button></div></label>
+    <label class="field row" id="team-toggle-wrap" style="display:none">
+      <span>🆚 2v2 팀전 모드</span>
+      <input type="checkbox" id="team-toggle">
+    </label>
     <label class="field slider-field">
       <span>동물당 카드 수: <b id="val-pets">8</b>장</span>
       <input type="range" id="sl-pets" min="6" max="12" value="8">
@@ -106,10 +111,17 @@ function renderSetup() {
     </label>
     <p class="setup-note" id="setup-note"></p>
     <button class="btn primary big" id="setup-start">🐾 게임 시작</button>`;
-  segWire('#seg-total', setup.total, (v) => { setup.total = v; if (setup.ai > v - 1) setup.ai = v - 1; renderAiSeg(); updateNote(); });
+  segWire('#seg-total', setup.total, (v) => {
+    setup.total = v;
+    if (v !== 4) { setup.teamMode = false; const tc = ui.$('#team-toggle'); if (tc) tc.checked = false; }
+    if (setup.ai > v - 1) setup.ai = v - 1;
+    renderAiSeg(); updateNote(); updateTeamToggle();
+  });
   segWire('#seg-diff', setup.difficulty, (v) => { setup.difficulty = v; });
   renderAiSeg();
   updateNote();
+  updateTeamToggle();
+  ui.$('#team-toggle').addEventListener('change', (e) => { setup.teamMode = e.target.checked; updateNote(); });
   const slPets = ui.$('#sl-pets');
   slPets.addEventListener('input', () => { setup.petsPerType = +slPets.value; ui.$('#val-pets').textContent = slPets.value; });
   const slSpec = ui.$('#sl-spec');
@@ -125,11 +137,17 @@ function renderSetup() {
     if (setup.ai > max) setup.ai = max;
     segWire('#seg-ai', setup.ai, (v) => { setup.ai = v; updateNote(); });
   }
+  function updateTeamToggle() {
+    const wrap = ui.$('#team-toggle-wrap');
+    if (wrap) wrap.style.display = setup.total === 4 ? '' : 'none';
+  }
   function updateNote() {
     const humans = setup.total - setup.ai;
-    ui.$('#setup-note').textContent = humans > 1
+    let note = humans > 1
       ? `🧑 사람 ${humans}명(같은 기기 핫시트) + 🤖 AI ${setup.ai}명`
       : `🧑 사람 1명 + 🤖 AI ${setup.ai}명`;
+    if (setup.teamMode) note += ' · 🆚 팀A(1·3번) vs 팀B(2·4번)';
+    ui.$('#setup-note').textContent = note;
   }
 }
 
@@ -149,8 +167,12 @@ function segWire(sel, current, onPick) {
 function startLocalGame() {
   const humans = setup.total - setup.ai;
   const configs = [];
-  for (let i = 0; i < humans; i++) configs.push({ name: humans > 1 ? `${settings.playerName} ${i + 1}` : settings.playerName, isAI: false });
-  for (let i = 0; i < setup.ai; i++) configs.push({ name: AI_NAMES[i % AI_NAMES.length], isAI: true, difficulty: setup.difficulty });
+  for (let i = 0; i < humans; i++) {
+    configs.push({ name: humans > 1 ? `${settings.playerName} ${i + 1}` : settings.playerName, isAI: false, team: setup.teamMode ? i % 2 : undefined });
+  }
+  for (let i = 0; i < setup.ai; i++) {
+    configs.push({ name: AI_NAMES[i % AI_NAMES.length], isAI: true, difficulty: setup.difficulty, team: setup.teamMode ? (humans + i) % 2 : undefined });
+  }
   ctrl.startLocal(configs, { petsPerType: setup.petsPerType, specialCount: setup.specialCount });
 }
 
