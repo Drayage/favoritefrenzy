@@ -194,6 +194,11 @@ function showSpecialEffect(emoji, line1, line2 = '', ms = 1000) {
   });
 }
 
+// 게임 종료 알림 (손패 0장 트리거 플레이어 표시)
+export function showGameEnd(triggerName) {
+  return showSpecialEffect('🃏', `${triggerName}의 패가 0장!`, '게임 종료 👋', 2200);
+}
+
 // ── 애니메이션 (이벤트 기반) ──────────────────────────────
 export async function animate(events, state, viewer) {
   if (!prefersAnim) return;

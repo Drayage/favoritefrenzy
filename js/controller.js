@@ -216,7 +216,7 @@ async function submit(action) {
 }
 
 // ── 종료/결과 ────────────────────────────────────────────
-function finishGame() {
+async function finishGame() {
   const { state } = G;
   sound.sfxEnd();
   ui.renderAll(state, G.viewer, { selectable: false });
@@ -234,7 +234,10 @@ function finishGame() {
     };
     saveReplay(record);
   }
-  setTimeout(() => showResult(state), 700);
+  const trigger = state.players.find((pl) => pl.hand.length === 0);
+  if (trigger) await ui.showGameEnd(trigger.name);
+  else await new Promise((r) => setTimeout(r, 700));
+  showResult(state);
 }
 
 function showResult(state) {
@@ -313,7 +316,7 @@ async function submitOnline(action) {
   G.busy = false;
 }
 
-function finishOnline(data) {
+async function finishOnline(data) {
   if (G.saved) return;
   G.saved = true;
   const record = {
@@ -324,7 +327,10 @@ function finishOnline(data) {
   saveReplay(record);
   if (G.isHost) net.setStatus(G.code, 'ended').catch(() => {});
   sound.sfxEnd();
-  setTimeout(() => showResult(G.state), 700);
+  const trigger = G.state.players.find((pl) => pl.hand.length === 0);
+  if (trigger) await ui.showGameEnd(trigger.name);
+  else await new Promise((r) => setTimeout(r, 700));
+  showResult(G.state);
 }
 
 export function leaveOnline() {
