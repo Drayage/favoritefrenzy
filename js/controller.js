@@ -9,6 +9,8 @@ import * as net from './firebase.js';
 import * as sound from './sound.js';
 
 let G = null; // 현재 세션
+let _snapBusy = false; // onSnapshot 처리 중 재진입 방지 (애니메이션 도중 다음 스냅샷 도착 시 큐잉)
+let _pendingSnap = null;
 
 // ── 세션 저장/복구 ───────────────────────────────────────
 function saveSession() {
@@ -376,6 +378,8 @@ export async function startOnline(code, roomData) {
     selected: new Set(), busy: false, saved: false, prevLogLen: (roomData.log || []).length,
     isHost: roomData.hostId === myUid, aiLock: false,
   };
+  _snapBusy = false;
+  _pendingSnap = null;
   saveSession();
   ui.showScreen('screen-game');
   wireHand();
@@ -383,7 +387,24 @@ export async function startOnline(code, roomData) {
   renderOnline();
 }
 
-async function onSnapshot(data) {
+// Firestore onSnapshot 콜백은 await 되지 않으므로, 애니메이션 재생 중(수백ms) 다음
+// 스냅샷이 도착하면 그대로 겹쳐 실행돼 G.state/G.prevLogLen을 동시에 건드려 이벤트가
+// 중복 적용되거나 누락됐다. _snapBusy로 직렬화하고, 처리 중 도착한 스냅샷은 최신
+// 1건만 _pendingSnap에 보관했다가 끝나고 이어서 처리한다(중간 스냅샷은 낡은 상태이므로 버려도 안전).
+function onSnapshot(data) {
+  if (_snapBusy) { _pendingSnap = data; return; }
+  _snapBusy = true;
+  processSnapshot(data).finally(() => {
+    _snapBusy = false;
+    if (_pendingSnap) {
+      const next = _pendingSnap;
+      _pendingSnap = null;
+      onSnapshot(next);
+    }
+  });
+}
+
+async function processSnapshot(data) {
   if (!G || G.mode !== 'online') return;
   const newLog = data.log || [];
   if (newLog.length > G.prevLogLen) {
